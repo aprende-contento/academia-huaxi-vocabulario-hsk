@@ -88,5 +88,6 @@ header::after{content:'';position:absolute;bottom:-3px;left:0;right:0;height:1px
 
 /* ── MOBILE ── */
 @media (max-width:767px){
+  .logo-img{height:18px;}
   .volver-text{display:none;}
 }

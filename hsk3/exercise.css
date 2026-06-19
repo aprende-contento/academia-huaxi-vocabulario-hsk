@@ -153,6 +153,7 @@ header{position:relative;z-index:10;background:rgba(255,255,255,0.62);backdrop-f
 
 /* ── MOBILE ── */
 @media (max-width:767px){
+  .logo-img{height:18px;}
   .tool-group{margin-right:0;}
   .score-bar{padding:0.3rem 0.6rem;gap:0.5rem;}
   .volver-text{display:none;}
