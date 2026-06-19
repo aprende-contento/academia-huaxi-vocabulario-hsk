@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GCC HSK5易混词辨析</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Cinzel:wght@400;600&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0d3535;--ink-mid:#1a5c5a;--gold:#2a9490;--gold-light:#4EC5C1;--correct:#2d6a2d;--wrong:#8b2020;--subtext:rgba(13,53,53,0.6);--card:rgba(255,255,255,0.65);--card-border:rgba(42,148,144,0.3);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans SC',sans-serif;min-height:100vh;color:var(--ink);overflow-x:hidden;}
+.bg{position:fixed;inset:0;z-index:0;background-color:#d6e4cc;background-image:linear-gradient(to bottom,#d6e4cc calc(100% - 80px),#a8bf9e calc(100% - 80px));background-attachment:fixed;;background-size:cover;background-position:center;}
+.corner{position:fixed;z-index:1;pointer-events:none;width:60px;height:60px;opacity:0.32;}
+.corner-tl{top:8px;left:8px;border-top:2px solid var(--gold);border-left:2px solid var(--gold);}
+.corner-tr{top:8px;right:8px;border-top:2px solid var(--gold);border-right:2px solid var(--gold);}
+.corner-bl{bottom:8px;left:8px;border-bottom:2px solid var(--gold);border-left:2px solid var(--gold);}
+.corner-br{bottom:8px;right:8px;border-bottom:2px solid var(--gold);border-right:2px solid var(--gold);}
+.container{position:relative;z-index:2;max-width:960px;margin:0 auto;padding:0 20px 16px;}
+header{display:flex;align-items:center;justify-content:space-between;padding:12px 0 10px;border-bottom:1px solid rgba(42,148,144,0.35);margin-bottom:10px;position:relative;}
+header::after{content:'';position:absolute;bottom:-3px;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold-light),transparent);}
+.h-title{font-family:'Noto Serif SC',serif;font-size:1.5rem;font-weight:900;color:var(--ink);letter-spacing:2px;text-shadow:1px 1px 0 rgba(255,255,255,0.5);}
+.h-title span{color:var(--gold);}
+.h-logo img{height:46px;}
+.stats-bar{display:flex;align-items:center;background:rgba(255,255,255,0.55);border:1px solid rgba(42,148,144,0.28);border-radius:50px;padding:0 16px;height:52px;margin-bottom:10px;backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(0,0,0,0.05);}
+.stat-item{display:flex;flex-direction:column;align-items:center;padding:0 8px;}
+.stat-label{font-size:0.46rem;letter-spacing:1.5px;color:var(--subtext);text-transform:uppercase;white-space:nowrap;}
+.stat-value{font-size:1.05rem;font-weight:700;color:var(--ink);line-height:1.2;white-space:nowrap;}
+.stat-value.gold{color:var(--gold);}.stat-value.green{color:var(--correct);}.stat-value.red{color:var(--wrong);}
+.stat-divider{width:1px;height:26px;background:rgba(42,148,144,0.22);flex-shrink:0;}
+.stat-spacer{flex:1;}
+.icon-btn{width:32px;height:32px;border-radius:50%;border:1px solid rgba(42,148,144,0.3);background:rgba(255,255,255,0.5);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.9rem;transition:all 0.18s;flex-shrink:0;margin-left:6px;}
+.icon-btn:hover{border-color:var(--gold);background:rgba(255,255,255,0.75);}
+.icon-btn.active{background:var(--gold);border-color:var(--gold);}
+.nota-label{font-size:0.42rem;letter-spacing:1.5px;color:var(--subtext);text-transform:uppercase;text-align:center;margin-top:1px;white-space:nowrap;}
+.group-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(42,148,144,0.1);border:1px solid rgba(42,148,144,0.3);border-radius:50px;padding:4px 14px;margin-bottom:10px;}
+.group-tag span{font-family:'Noto Serif SC',serif;font-size:0.95rem;font-weight:700;color:var(--gold);}
+.group-tag .vs{font-size:0.65rem;color:var(--subtext);}
+.progress-wrap{height:3px;background:rgba(42,148,144,0.18);border-radius:3px;margin-bottom:10px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-light));border-radius:3px;transition:width 0.4s ease;}
+.quiz-layout{display:flex;flex-direction:column;gap:8px;}
+.question-card{background:var(--card);border:1px solid var(--card-border);border-radius:14px;height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(12px);text-align:center;position:relative;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,0.06);flex-shrink:0;padding:16px 32px;}
+.question-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.q-sentence{font-family:'Noto Serif SC',serif;font-size:1.45rem;font-weight:700;color:var(--ink);line-height:1.8;letter-spacing:2px;}
+.q-blank{display:inline-block;min-width:90px;border-bottom:2px solid var(--gold);color:transparent;font-weight:900;vertical-align:bottom;margin:0 2px;}
+.q-sentence-es{font-size:0.78rem;color:var(--subtext);margin-top:6px;font-style:italic;letter-spacing:0.5px;opacity:0;transition:opacity 0.4s ease;min-height:1.2em;}
+.q-sentence-es.revealed{opacity:1;}
+.feedback-bar{height:40px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:0.78rem;padding:0 12px;border-radius:10px;flex-shrink:0;border:1px solid transparent;background:transparent;transition:background 0.2s,border-color 0.2s,color 0.2s;}
+.feedback-bar.correct-fb{background:rgba(45,106,45,0.1);color:var(--correct);border-color:rgba(45,106,45,0.2);}
+.feedback-bar.wrong-fb{background:rgba(139,32,32,0.07);color:var(--wrong);border-color:rgba(139,32,32,0.15);}
+.explanation-box{height:44px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.4);border:1px solid transparent;border-radius:10px;padding:0 14px;flex-shrink:0;transition:all 0.3s;}
+.explanation-box.visible{border-color:rgba(42,148,144,0.25);background:rgba(255,248,220,0.6);}
+.exp-text{font-size:0.75rem;color:var(--ink-mid);text-align:center;line-height:1.4;}
+.options-grid{display:grid;gap:8px;flex-shrink:0;}
+.options-grid.opts-2{grid-template-columns:1fr 1fr;}
+.options-grid.opts-3{grid-template-columns:1fr 1fr 1fr;}
+.option-btn{height:60px;border-radius:11px;border:1.5px solid rgba(42,148,144,0.22);background:rgba(255,255,255,0.52);color:var(--ink);font-family:'Noto Serif SC',serif;font-size:1.2rem;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all 0.16s;text-align:center;backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:0 8px;}
+.option-btn:hover:not(:disabled){background:rgba(255,255,255,0.82);border-color:var(--gold);color:var(--gold);transform:translateY(-2px);box-shadow:0 4px 12px rgba(42,148,144,0.14);}
+.option-btn.correct{background:rgba(45,106,45,0.12);border-color:var(--correct);color:var(--correct);font-weight:700;}
+.option-btn.wrong{background:rgba(139,32,32,0.08);border-color:var(--wrong);color:var(--wrong);}
+.option-btn:disabled{cursor:default;transform:none !important;}
+.next-btn{height:46px;border-radius:12px;border:1.5px solid var(--gold);background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#fff;font-family:'Noto Sans SC',sans-serif;font-size:0.86rem;font-weight:700;cursor:pointer;letter-spacing:2px;transition:opacity 0.2s;box-shadow:0 2px 10px rgba(42,148,144,0.22);width:100%;flex-shrink:0;opacity:0;pointer-events:none;}
+.next-btn.visible{opacity:1;pointer-events:all;}
+.wrong-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:99;backdrop-filter:blur(2px);}
+.wrong-overlay.open{display:block;}
+.wrong-panel{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(600px,92vw);max-height:82vh;background:rgba(248,245,235,0.98);border:1px solid rgba(42,148,144,0.3);border-radius:18px;z-index:100;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.18);}
+.wrong-panel.open{display:flex;flex-direction:column;}
+.wp-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;border-bottom:1px solid rgba(42,148,144,0.2);flex-shrink:0;}
+.wp-header h2{font-family:'Noto Serif SC',serif;font-size:1.05rem;color:var(--ink);letter-spacing:1px;}
+.wp-header .close-btn{background:rgba(42,148,144,0.1);border:1px solid rgba(42,148,144,0.2);border-radius:50%;width:32px;height:32px;font-size:1rem;cursor:pointer;color:var(--ink);display:flex;align-items:center;justify-content:center;}
+.wp-body{overflow-y:auto;flex:1;padding:0 20px;}
+.wp-item{padding:14px 0;border-bottom:1px solid rgba(42,148,144,0.1);}
+.wp-zh{font-family:'Noto Serif SC',serif;font-size:1rem;font-weight:700;color:var(--ink);margin-bottom:3px;}
+.wp-es{font-size:0.82rem;color:var(--ink-mid);font-style:italic;margin-bottom:4px;}
+.wp-answer{font-size:0.8rem;color:var(--correct);margin-bottom:3px;}
+.wp-exp{font-size:0.72rem;color:var(--subtext);}
+.wp-footer{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid rgba(42,148,144,0.2);flex-shrink:0;background:rgba(248,245,235,0.95);}
+.wp-count{font-size:0.8rem;color:var(--subtext);}
+.wp-clear-btn{padding:7px 18px;border-radius:50px;border:1.5px solid var(--wrong);background:transparent;color:var(--wrong);font-family:'Noto Sans SC',sans-serif;font-size:0.76rem;font-weight:700;cursor:pointer;transition:all 0.18s;letter-spacing:1px;}
+.wp-clear-btn:hover{background:var(--wrong);color:#fff;}
+.wp-empty{color:var(--subtext);font-size:0.85rem;text-align:center;padding:30px 0;}
+.results-screen{display:none;text-align:center;padding:20px 10px;}
+.results-screen.show{display:block;}
+.results-card{background:rgba(255,255,255,0.62);border:1px solid rgba(42,148,144,0.28);border-radius:18px;padding:28px 22px;backdrop-filter:blur(12px);box-shadow:0 4px 24px rgba(0,0,0,0.07);}
+.results-title{font-family:'Noto Serif SC',serif;font-size:1.7rem;font-weight:900;color:var(--gold);letter-spacing:3px;margin-bottom:2px;}
+.results-sub-title{font-size:0.56rem;letter-spacing:3px;color:var(--subtext);font-family:'Cinzel',serif;margin-bottom:12px;}
+.results-score{font-size:4rem;font-weight:900;color:var(--gold);line-height:1;margin:6px 0 3px;}
+.results-sub{color:var(--subtext);font-size:0.82rem;margin-bottom:14px;}
+.results-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
+.result-stat{background:rgba(255,255,255,0.5);border:1px solid rgba(42,148,144,0.18);border-radius:10px;padding:10px;}
+.result-stat .n{font-size:1.7rem;font-weight:900;}
+.result-stat .l{font-size:0.52rem;letter-spacing:2px;color:var(--subtext);margin-top:1px;}
+.restart-btn{padding:10px 26px;border-radius:50px;border:none;background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#fff;font-family:'Noto Sans SC',sans-serif;font-size:0.84rem;font-weight:700;cursor:pointer;letter-spacing:2px;margin:0 4px;transition:all 0.2s;box-shadow:0 2px 10px rgba(42,148,144,0.25);}
+.restart-btn:hover{opacity:0.9;transform:translateY(-2px);}
+.f-divider{width:1px;height:28px;background:rgba(42,148,144,0.18);}
+@keyframes pop{0%{transform:scale(0.96);opacity:0}100%{transform:scale(1);opacity:1}}
+
+  .volver-wrap{max-width:800px;margin:0 auto;padding:8px 16px 0;}
+  .volver-btn{display:inline-block;font-size:0.85rem;color:rgba(42,61,34,0.7);text-decoration:none;padding:4px 10px;border:1px solid rgba(42,61,34,0.2);border-radius:20px;background:rgba(255,255,255,0.5);}
+  .volver-btn:hover{background:rgba(255,255,255,0.8);color:#2a3d22;}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+<div class="corner corner-bl"></div><div class="corner corner-br"></div>
+<div class="wrong-overlay" id="wrong-overlay" onclick="closeWrongPanel()"></div>
+<div class="wrong-panel" id="wrong-panel">
+  <div class="wp-header">
+    <h2>📖 错题本 · Cuaderno de errores</h2>
+    <button class="close-btn" onclick="closeWrongPanel()">✕</button>
+  </div>
+  <div class="wp-body" id="wp-body"></div>
+  <div class="wp-footer">
+    <span class="wp-count" id="wp-count">0 个错题</span>
+    <button class="wp-clear-btn" onclick="clearWrong()">清空 Borrar</button>
+  </div>
+</div>
+<div class="container">
+  <header>
+    <div class="h-title">HSK5 <span>易混词辨析</span></div>
+    <div class="h-logo"><img src="../school-logo.jpg" alt="Chunchun Guo"></div>
+  </header>
+  <div class="volver-wrap"><a href="GCC_HSK5_index.html" class="volver-btn">← <span class="volver-text">Volver</span></a></div>
+  <div class="stats-bar">
+    <div class="stat-item"><span class="stat-label">PUNTOS</span><span class="stat-value gold" id="score">0</span></div>
+    <div class="stat-divider"></div>
+    <div class="stat-item"><span class="stat-label">RACHA</span><span class="stat-value gold" id="streak">🔥 0</span></div>
+    <div class="stat-divider"></div>
+    <div class="stat-item"><span class="stat-label">PREG.</span><span class="stat-value" id="qcount">1/44</span></div>
+    <div class="stat-divider"></div>
+    <div class="stat-item"><span class="stat-label">TIEMPO</span><span class="stat-value gold" id="timer-display">00:00</span></div>
+    <div class="stat-spacer"></div>
+    <div class="stat-item"><span class="stat-label">CORRECTAS</span><span class="stat-value green" id="correct-count">0</span></div>
+    <div class="stat-divider"></div>
+    <div class="stat-item"><span class="stat-label">ERRORES</span><span class="stat-value red" id="wrong-count">0</span></div>
+    <div style="width:6px;flex-shrink:0;"></div>
+    <div style="display:flex;flex-direction:column;align-items:center;">
+      <button class="icon-btn active" id="sound-btn" onclick="toggleSound()">🔊</button>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;">
+      <button class="icon-btn" id="wrong-btn" onclick="openWrongPanel()">📖</button>
+      <span class="nota-label">NOTA</span>
+    </div>
+  </div>
+  <div class="progress-wrap"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  <div id="quiz-area">
+    <div class="quiz-layout">
+      <div id="group-tag" class="group-tag"></div>
+      <div class="question-card" id="question-card">
+        <div class="q-sentence" id="q-sentence"></div>
+        <div class="q-sentence-es" id="q-sentence-es"></div>
+      </div>
+      <div class="feedback-bar" id="feedback"></div>
+      <div class="explanation-box" id="explanation-box">
+        <span class="exp-text" id="exp-text"></span>
+      </div>
+      <div class="options-grid" id="options-grid"></div>
+      <button class="next-btn" id="next-btn" onclick="nextQuestion()">下一题 · SIGUIENTE →</button>
+    </div>
+  </div>
+  <div class="results-screen" id="results-screen">
+    <div class="results-card">
+      <div class="results-title">辨析完成</div>
+      <div class="results-sub-title">COMPLETADO · HSK5易混词辨析</div>
+      <div class="results-score" id="final-score">0</div>
+      <div class="results-sub" id="final-sub"></div>
+      <div class="results-grid">
+        <div class="result-stat"><div class="n" style="color:var(--correct)" id="r-correct">0</div><div class="l">CORRECTAS</div></div>
+        <div class="result-stat"><div class="n" style="color:var(--wrong)" id="r-wrong">0</div><div class="l">ERRORES</div></div>
+        <div class="result-stat"><div class="n" style="color:var(--gold)" id="r-pct">0%</div><div class="l">ACIERTOS</div></div>
+        <div class="result-stat"><div class="n" style="color:var(--ink)" id="r-time">0:00</div><div class="l">TIEMPO</div></div>
+      </div>
+      <button class="restart-btn" onclick="startGame()">再来一次 · REPETIR</button>
+    </div>
+  </div>
+  
+</div>
+<script>
+const TOTAL=44;
+let audioCtx=null,soundOn=true;
+function getAC(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function playTone(f,d,t='sine',v=0.3){if(!soundOn)return;try{const c=getAC(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,c.currentTime);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+d);o.start(c.currentTime);o.stop(c.currentTime+d);}catch(e){}}
+function playCorrect(){playTone(523,0.1);setTimeout(()=>playTone(659,0.1),100);setTimeout(()=>playTone(784,0.18),200);}
+function playWrong(){playTone(300,0.08,'sawtooth',0.2);setTimeout(()=>playTone(250,0.12,'sawtooth',0.15),90);}
+function playClick(){playTone(440,0.06,'sine',0.15);}
+function toggleSound(){soundOn=!soundOn;const b=document.getElementById('sound-btn');b.textContent=soundOn?'🔊':'🔇';b.classList.toggle('active',soundOn);}
+let timerInterval=null,elapsedSeconds=0;
+function startTimer(){elapsedSeconds=0;clearInterval(timerInterval);timerInterval=setInterval(()=>{elapsedSeconds++;document.getElementById('timer-display').textContent=formatTime(elapsedSeconds);},1000);}
+function stopTimer(){clearInterval(timerInterval);}
+function formatTime(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+let wrongItems=[];
+function openWrongPanel(){document.getElementById('wrong-panel').classList.add('open');document.getElementById('wrong-overlay').classList.add('open');renderWrongPanel();}
+function closeWrongPanel(){document.getElementById('wrong-panel').classList.remove('open');document.getElementById('wrong-overlay').classList.remove('open');}
+function clearWrong(){if(wrongItems.length===0)return;if(confirm('确认清空错题？')){wrongItems=[];renderWrongPanel();document.getElementById('wrong-btn').classList.remove('active');}}
+function addWrongItem(q){if(!wrongItems.find(x=>x.sentence===q.sentence)){wrongItems.push(q);document.getElementById('wrong-btn').classList.add('active');}}
+function renderWrongPanel(){
+  document.getElementById('wp-count').textContent=wrongItems.length+' 个错题';
+  const body=document.getElementById('wp-body');
+  if(wrongItems.length===0){body.innerHTML='<div class="wp-empty">还没有错题 · Sin errores aún 🎉</div>';return;}
+  body.innerHTML=wrongItems.map(w=>{
+    const zhFull=w.sentence.replace('______','【'+w.answer+'】');
+    const esFull=w.sentence_es.replace('______',w.answer_es);
+    return `<div class="wp-item"><div class="wp-zh">${zhFull}</div><div class="wp-es">${esFull}</div><div class="wp-answer">✅ ${w.answer}</div><div class="wp-exp">💡 ${w.explanation}</div></div>`;
+  }).join('');
+}
+const allQuestions = [{"group": ["权力", "权利"], "questions": [{"sentence": "每个公民都有受教育的______。", "sentence_es": "Todo ciudadano tiene el ______ de recibir educación.", "answer": "权利", "options": ["权力", "权利"], "explanation": "权利 = derecho (de las personas)；权力 = poder/autoridad (de un cargo)", "answer_es": "derecho"}, {"sentence": "总统拥有任命官员的______。", "sentence_es": "El presidente tiene el ______ de nombrar funcionarios.", "answer": "权力", "options": ["权力", "权利"], "explanation": "权力 = poder/autoridad；职位赋予的权力", "answer_es": "poder"}]}, {"group": ["状况", "状态"], "questions": [{"sentence": "手术后，病人处于昏迷______。", "sentence_es": "Tras la operación, el paciente se encuentra en ______ de coma.", "answer": "状态", "options": ["状况", "状态"], "explanation": "状态 = estado específico en un momento concreto", "answer_es": "estado"}]}, {"group": ["记录", "纪录"], "questions": [{"sentence": "她打破了100米短跑的世界______。", "sentence_es": "Ella batió el ______ mundial de los 100 metros lisos.", "answer": "纪录", "options": ["记录", "纪录"], "explanation": "纪录 = récord/marca deportiva；记录 = registrar/anotar información", "answer_es": "récord"}, {"sentence": "请把今天会议的内容______下来。", "sentence_es": "Por favor ______ el contenido de la reunión de hoy.", "answer": "记录", "options": ["记录", "纪录"], "explanation": "记录 = registrar/anotar；这里是动词用法", "answer_es": "registra"}]}, {"group": ["改进", "改善", "改正"], "questions": [{"sentence": "老师让他______作文里的错别字。", "sentence_es": "El profesor le pidió que ______ las faltas en la redacción.", "answer": "改正", "options": ["改进", "改善", "改正"], "explanation": "改正 = corregir un error concreto；改进 = mejorar proceso；改善 = mejorar condiciones", "answer_es": "corrija"}]}, {"group": ["建立", "成立", "建设"], "questions": [{"sentence": "这家公司______于2008年。", "sentence_es": "Esta empresa se ______ en 2008.", "answer": "成立", "options": ["建立", "成立", "建设"], "explanation": "成立 = fundar/constituir una organización；主语是组织机构时用成立", "answer_es": "fundó"}, {"sentence": "两国领导人决定______长期合作关系。", "sentence_es": "Los líderes de ambos países decidieron ______ una relación de cooperación a largo plazo.", "answer": "建立", "options": ["建立", "成立", "建设"], "explanation": "建立 = establecer una relación o sistema；用于抽象事物", "answer_es": "establecer"}]}, {"group": ["实现", "实行", "实践"], "questions": [{"sentence": "他通过努力______了自己的梦想。", "sentence_es": "A través del esfuerzo, ______ su sueño.", "answer": "实现", "options": ["实现", "实行", "实践"], "explanation": "实现 = hacer realidad/lograr；用于梦想、目标、计划", "answer_es": "realizó"}, {"sentence": "这项新政策从明年开始正式______。", "sentence_es": "Esta nueva política se ______ oficialmente desde el próximo año.", "answer": "实行", "options": ["实现", "实行", "实践"], "explanation": "实行 = aplicar/poner en práctica (una política, norma)；主语是制度或政策", "answer_es": "aplicará"}]}, {"group": ["传播", "传递", "传染"], "questions": [{"sentence": "这种病毒很容易______，要做好防护。", "sentence_es": "Este virus se ______ fácilmente, hay que protegerse bien.", "answer": "传染", "options": ["传播", "传递", "传染"], "explanation": "传染 = contagiar (enfermedades)；专指疾病的传播", "answer_es": "contagia"}, {"sentence": "互联网使信息______的速度越来越快。", "sentence_es": "Internet hace que la velocidad de ______ de información sea cada vez más rápida.", "answer": "传播", "options": ["传播", "传递", "传染"], "explanation": "传播 = difundir/propagar (información, cultura)；范围广", "answer_es": "difusión"}]}, {"group": ["观点", "观念", "概念"], "questions": [{"sentence": "他对这件事有自己独特的______。", "sentence_es": "Él tiene su propio ______ único sobre este asunto.", "answer": "观点", "options": ["观点", "观念", "概念"], "explanation": "观点 = punto de vista sobre algo concreto；对某事的看法", "answer_es": "punto de vista"}, {"sentence": "年轻人的婚姻______和父母那代人很不一样。", "sentence_es": "La ______ del matrimonio de los jóvenes es muy diferente a la de sus padres.", "answer": "观念", "options": ["观点", "观念", "概念"], "explanation": "观念 = noción/idea profunda sobre la vida；深层的思想认识", "answer_es": "concepción"}]}, {"group": ["时代", "时期", "年代"], "questions": [{"sentence": "20世纪80______的中国发生了很大变化。", "sentence_es": "China experimentó grandes cambios en los ______ 80 del siglo XX.", "answer": "年代", "options": ["时代", "时期", "年代"], "explanation": "年代 = década (80年代=años 80)；指具体的十年", "answer_es": "años"}, {"sentence": "我们生活在一个科技飞速发展的______。", "sentence_es": "Vivimos en una ______ de rápido desarrollo tecnológico.", "answer": "时代", "options": ["时代", "时期", "年代"], "explanation": "时代 = era/época con características propias；强调时代特征", "answer_es": "era"}]}, {"group": ["方式", "方案"], "questions": [{"sentence": "我们需要制定一个解决问题的详细______。", "sentence_es": "Necesitamos elaborar un ______ detallado para resolver el problema.", "answer": "方案", "options": ["方式", "方案"], "explanation": "方案 = plan/propuesta detallada；有具体步骤的计划", "answer_es": "plan"}, {"sentence": "每个人都有自己的学习______。", "sentence_es": "Cada persona tiene su propia ______ de aprender.", "answer": "方式", "options": ["方式", "方案"], "explanation": "方式 = modo/manera de hacer algo；指做事的方法或风格", "answer_es": "manera"}]}, {"group": ["规则", "规律", "规矩"], "questions": [{"sentence": "太阳每天从东方升起，这是自然界的______。", "sentence_es": "El sol sale por el este cada día, esta es la ______ de la naturaleza.", "answer": "规律", "options": ["规则", "规律", "规矩"], "explanation": "规律 = ley natural/patrón regular；自然或事物本身的规律", "answer_es": "ley"}, {"sentence": "比赛有严格的______，所有选手都必须遵守。", "sentence_es": "La competición tiene ______ estrictas que todos deben respetar.", "answer": "规则", "options": ["规则", "规律", "规矩"], "explanation": "规则 = regla/norma escrita；人为制定的规定", "answer_es": "reglas"}]}, {"group": ["成果", "成就"], "questions": [{"sentence": "经过三年研究，科学家们取得了重大______。", "sentence_es": "Tras tres años de investigación, los científicos lograron un gran ______.", "answer": "成果", "options": ["成果", "成就"], "explanation": "成果 = resultado/fruto de un trabajo；强调工作的具体结果", "answer_es": "resultado"}, {"sentence": "她在音乐领域取得了令人瞩目的______。", "sentence_es": "Ella ha alcanzado ______ notables en el campo de la música.", "answer": "成就", "options": ["成果", "成就"], "explanation": "成就 = logro/realización personal；强调个人的卓越表现", "answer_es": "logros"}]}, {"group": ["控制", "掌握", "把握"], "questions": [{"sentence": "你______汉语语法了吗？", "sentence_es": "¿Ya ______ la gramática china?", "answer": "掌握", "options": ["控制", "掌握", "把握"], "explanation": "掌握 = dominar/aprender bien；指技能或知识的熟练掌握", "answer_es": "dominas"}, {"sentence": "这次考试我没有______，可能会失败。", "sentence_es": "No tengo ______ para este examen, puede que fracase.", "answer": "把握", "options": ["控制", "掌握", "把握"], "explanation": "把握 = certeza/seguridad；没有把握=no estar seguro del resultado", "answer_es": "seguridad"}]}, {"group": ["确定", "确认"], "questions": [{"sentence": "请______您的订单信息是否正确。", "sentence_es": "Por favor ______ si la información de su pedido es correcta.", "answer": "确认", "options": ["确定", "确认"], "explanation": "确认 = confirmar/verificar algo ya existente；核实已有信息", "answer_es": "confirme"}]}, {"group": ["表现", "表明"], "questions": [{"sentence": "这些数据______空气质量正在逐步改善。", "sentence_es": "Estos datos ______ que la calidad del aire está mejorando gradualmente.", "answer": "表明", "options": ["表现", "表明"], "explanation": "表明 = indicar/mostrar (hechos, datos)；用数据或事实说明某情况", "answer_es": "indican"}, {"sentence": "他在比赛中______出色，获得了冠军。", "sentence_es": "Tuvo una ______ sobresaliente en la competición y ganó el campeonato.", "answer": "表现", "options": ["表现", "表明"], "explanation": "表现 = rendimiento/actuación；指在某活动中的发挥", "answer_es": "actuación"}]}, {"group": ["利用", "运用", "应用"], "questions": [{"sentence": "他善于______所学的知识解决实际问题。", "sentence_es": "Sabe ______ los conocimientos aprendidos para resolver problemas prácticos.", "answer": "运用", "options": ["利用", "运用", "应用"], "explanation": "运用 = aplicar conocimientos con destreza；灵活使用", "answer_es": "aplicar"}, {"sentence": "不要______别人的善意来谋取私利。", "sentence_es": "No ______ la buena voluntad de los demás para beneficio propio.", "answer": "利用", "options": ["利用", "运用", "应用"], "explanation": "利用 = aprovechar/explotar (a veces negativo)；可含贬义", "answer_es": "aproveches"}]}, {"group": ["感受", "感想", "感激"], "questions": [{"sentence": "读完这本书，你有什么______？", "sentence_es": "Después de leer este libro, qué ______ tienes?", "answer": "感想", "options": ["感受", "感想", "感激"], "explanation": "感想 = reflexión/impresión tras una experiencia；读后感、观后感", "answer_es": "reflexiones"}, {"sentence": "我非常______你在困难时给我的帮助。", "sentence_es": "Estoy muy ______ por la ayuda que me diste en los momentos difíciles.", "answer": "感激", "options": ["感受", "感想", "感激"], "explanation": "感激 = estar agradecido；对他人帮助的感谢之情", "answer_es": "agradecido/a"}]}, {"group": ["面对", "面临"], "questions": [{"sentence": "我们______困难时，不应该逃避。", "sentence_es": "Cuando ______ dificultades, no debemos huir.", "answer": "面对", "options": ["面对", "面临"], "explanation": "面对 = enfrentarse a / hacer frente a；主动应对的态度", "answer_es": "nos enfrentamos a"}, {"sentence": "这家公司______严重的财务危机。", "sentence_es": "Esta empresa ______ una grave crisis financiera.", "answer": "面临", "options": ["面对", "面临"], "explanation": "面临 = estar ante una situación amenazante；强调处于困境之中", "answer_es": "se enfrenta a"}]}, {"group": ["逃避", "避免"], "questions": [{"sentence": "为了______交通堵塞，他选择早点出发。", "sentence_es": "Para ______ el atasco de tráfico, decidió salir antes.", "answer": "避免", "options": ["逃避", "避免"], "explanation": "避免 = evitar/prevenir algo negativo；采取措施不让坏事发生", "answer_es": "evitar"}, {"sentence": "他总是______责任，从不承认自己的错误。", "sentence_es": "Siempre ______ sus responsabilidades y nunca admite sus errores.", "answer": "逃避", "options": ["逃避", "避免"], "explanation": "逃避 = eludir/escapar de (responsabilidades)；含贬义，不敢面对", "answer_es": "evade"}]}, {"group": ["制定", "制作", "制度"], "questions": [{"sentence": "政府______了一系列保护环境的法规。", "sentence_es": "El gobierno ______ una serie de regulaciones para proteger el medio ambiente.", "answer": "制定", "options": ["制定", "制作", "制度"], "explanation": "制定 = elaborar/formular (leyes, planes, políticas)；用于规则政策", "answer_es": "elaboró"}, {"sentence": "他花了一个月______了这部纪录片。", "sentence_es": "Tardó un mes en ______ este documental.", "answer": "制作", "options": ["制定", "制作", "制度"], "explanation": "制作 = producir/elaborar (algo concreto)；用于影视、产品等", "answer_es": "producir"}]}, {"group": ["形式", "形势", "形象"], "questions": [{"sentence": "目前国际______十分复杂，各国都在密切关注。", "sentence_es": "La ______ internacional actual es muy compleja, todos los países la siguen de cerca.", "answer": "形势", "options": ["形式", "形势", "形象"], "explanation": "形势 = situación/coyuntura (política, económica)；指外部环境的状态", "answer_es": "situación"}, {"sentence": "这次活动的______是演讲比赛。", "sentence_es": "El ______ de este evento es un concurso de discursos.", "answer": "形式", "options": ["形式", "形势", "形象"], "explanation": "形式 = forma/formato；指活动或事物的外在形态", "answer_es": "formato"}]}, {"group": ["促进", "推广"], "questions": [{"sentence": "多读书能______思维能力的发展。", "sentence_es": "Leer mucho puede ______ el desarrollo de la capacidad de pensamiento.", "answer": "促进", "options": ["促进", "推广"], "explanation": "促进 = promover/impulsar un desarrollo；使某事更快更好地发展", "answer_es": "impulsar"}, {"sentence": "政府大力______新能源汽车的使用。", "sentence_es": "El gobierno ______ activamente el uso de vehículos de nueva energía.", "answer": "推广", "options": ["促进", "推广"], "explanation": "推广 = generalizar/extender el uso；让更多人使用或了解", "answer_es": "promueve"}]}, {"group": ["违反", "否定"], "questions": [{"sentence": "他的行为______了公司的规定，受到了处罚。", "sentence_es": "Su comportamiento ______ las normas de la empresa y fue sancionado.", "answer": "违反", "options": ["违反", "否定"], "explanation": "违反 = violar/infringir (normas, leyes)；不遵守规定", "answer_es": "incumplió"}]}, {"group": ["损失", "危害"], "questions": [{"sentence": "吸烟对身体健康有很大的______。", "sentence_es": "Fumar tiene un gran ______ para la salud.", "answer": "危害", "options": ["损失", "危害"], "explanation": "危害 = perjuicio/daño (a la salud)；造成伤害的影响", "answer_es": "daño"}, {"sentence": "这次火灾造成了巨大的经济______。", "sentence_es": "Este incendio causó enormes ______ económicas.", "answer": "损失", "options": ["损失", "危害"], "explanation": "损失 = pérdida (económica, material)；强调失去的东西", "answer_es": "pérdidas"}]}];
+function buildQuestions(){
+  const qs=[];
+  allQuestions.forEach(g=>{g.questions.forEach(q=>{qs.push({...q,group:g.group});});});
+  return shuffle(qs);
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+let questions=[],current=0,score=0,streak=0,correctCount=0,wrongCount=0,answered=false;
+function startGame(){
+  questions=buildQuestions();
+  current=0;score=0;streak=0;correctCount=0;wrongCount=0;answered=false;
+  document.getElementById('results-screen').classList.remove('show');
+  document.getElementById('quiz-area').style.display='block';
+  updateStats();startTimer();showQuestion();
+}
+function showQuestion(){
+  if(current>=TOTAL){showResults();return;}
+  answered=false;
+  const q=questions[current];
+  document.getElementById('next-btn').classList.remove('visible');
+  const fb=document.getElementById('feedback');fb.className='feedback-bar';fb.innerHTML='';
+  const eb=document.getElementById('explanation-box');eb.className='explanation-box';
+  document.getElementById('exp-text').textContent='';
+  const esEl=document.getElementById('q-sentence-es');
+  esEl.textContent='';esEl.classList.remove('revealed');
+  document.getElementById('progress-fill').style.width=(current/TOTAL*100)+'%';
+  document.getElementById('qcount').textContent=(current+1)+'/'+TOTAL;
+  const card=document.getElementById('question-card');
+  card.style.animation='none';void card.offsetWidth;card.style.animation='pop 0.25s ease';
+  const tag=document.getElementById('group-tag');
+  tag.innerHTML=q.group.map((w,i)=>i<q.group.length-1?`<span>${w}</span><span class="vs">vs</span>`:`<span>${w}</span>`).join('');
+  document.getElementById('q-sentence').innerHTML=q.sentence.replace('______','<span class="q-blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>');
+  const grid=document.getElementById('options-grid');
+  grid.className='options-grid opts-'+q.options.length;
+  grid.innerHTML='';
+  q.options.forEach(opt=>{
+    const btn=document.createElement('button');
+    btn.className='option-btn';btn.textContent=opt;
+    btn.onclick=()=>checkAnswer(btn,opt,q);
+    grid.appendChild(btn);
+  });
+}
+function checkAnswer(btn,chosen,q){
+  if(answered)return;answered=true;playClick();
+  const isCorrect=chosen===q.answer;
+  document.querySelectorAll('.option-btn').forEach(b=>{
+    b.disabled=true;
+    if(b.textContent===q.answer)b.classList.add('correct');
+  });
+  // Reveal complete Spanish sentence — answer_es replaces blank, pure Spanish
+  const esEl=document.getElementById('q-sentence-es');
+  esEl.textContent=q.sentence_es.replace('______',q.answer_es);
+  esEl.classList.add('revealed');
+  const fb=document.getElementById('feedback');
+  const eb=document.getElementById('explanation-box');
+  if(isCorrect){
+    btn.classList.add('correct');score+=10+streak*2;streak++;correctCount++;
+    playCorrect();fb.className='feedback-bar correct-fb';
+    fb.innerHTML='✅ ¡Correcto! &nbsp;<strong>'+q.answer+'</strong>';
+  }else{
+    btn.classList.add('wrong');streak=0;wrongCount++;addWrongItem(q);
+    playWrong();fb.className='feedback-bar wrong-fb';
+    fb.innerHTML='❌ Respuesta correcta: &nbsp;<strong>'+q.answer+'</strong>';
+  }
+  eb.classList.add('visible');
+  document.getElementById('exp-text').textContent='💡 '+q.explanation;
+  updateStats();
+  document.getElementById('next-btn').classList.add('visible');
+}
+function nextQuestion(){playClick();current++;showQuestion();}
+function updateStats(){
+  document.getElementById('score').textContent=score;
+  document.getElementById('streak').textContent='🔥 '+streak;
+  document.getElementById('correct-count').textContent=correctCount;
+  document.getElementById('wrong-count').textContent=wrongCount;
+}
+function showResults(){
+  stopTimer();
+  document.getElementById('quiz-area').style.display='none';
+  document.getElementById('progress-fill').style.width='100%';
+  const pct=Math.round(correctCount/TOTAL*100);
+  document.getElementById('final-score').textContent=score;
+  document.getElementById('final-sub').textContent=pct+'% aciertos · '+formatTime(elapsedSeconds);
+  document.getElementById('r-correct').textContent=correctCount;
+  document.getElementById('r-wrong').textContent=wrongCount;
+  document.getElementById('r-pct').textContent=pct+'%';
+  document.getElementById('r-time').textContent=formatTime(elapsedSeconds);
+  document.getElementById('results-screen').classList.add('show');
+}
+startGame();
+</script>
+<script src="../common.js"></script>
+</body>
+</html>

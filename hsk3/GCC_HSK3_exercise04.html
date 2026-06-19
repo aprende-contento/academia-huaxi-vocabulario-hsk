@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HSK3词汇练习4 · 华西书院</title>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="exercise.css">
+</head>
+<body>
+<header>
+  <div class="header-top">
+    <a href="GCC_HSK3_index.html" style="display:flex;align-items:center;gap:0.35rem;padding:0.35rem 0.85rem;border-radius:99px;border:1.5px solid rgba(60,140,80,0.35);background:rgba(255,255,255,0.7);color:#2a6a3a;font-size:0.78rem;font-weight:700;text-decoration:none;transition:all .2s;margin-right:0.5rem;white-space:nowrap;" onmouseover="this.style.background='#7a9e7e';this.style.color='#fff'" onmouseout="this.style.background='rgba(255,255,255,0.7)';this.style.color='#2a6a3a'">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+      <span class="volver-text">Volver</span>
+    </a>
+    
+    <div class="title-zh">HSK3词汇练习4</div>
+    <img class="logo-img" id="logo-img" src="" alt="华西书院">
+  </div>
+  <div class="toolbar">
+    <div class="score-bar">
+      <div class="score-item"><span class="score-label">得分 Puntos</span><span class="score-val" id="score-val">0</span></div>
+      <div class="score-item"><span class="score-label">连击 Racha</span><span class="score-val" id="streak-val">🔥 0</span></div>
+      <div class="score-item"><span class="score-label">题目 Preg.</span><span class="score-val" id="q-val">1/25</span></div>
+    </div>
+    <div class="tool-group">
+      <button class="tool-btn active" id="sound-btn" onclick="toggleSound()">🔊</button>
+      <button class="tool-btn" id="timer-btn" onclick="toggleTimer()">⏱️</button>
+      <div class="tool-btn-nb-wrap">
+        <button class="tool-btn-nb" id="nb-btn" onclick="openNotebook()">📖</button>
+        <span class="tool-btn-nb-label">Errores</span>
+      </div>
+    </div>
+  </div>
+  <div class="mode-tabs">
+    <button class="mode-btn active" onclick="setMode('zh_es',this)">中文→Español</button>
+    <button class="mode-btn" onclick="setMode('es_zh',this)">Español→中文</button>
+    <button class="mode-btn" onclick="setMode('pinyin_es',this)">汉字→Español</button>
+    <button class="mode-btn" onclick="setMode('sentence',this)">🧩 Ordenar frase</button>
+  </div>
+</header>
+
+<div id="game-area">
+  <div class="progress-wrap"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
+  <div class="timer-num" id="timer-num">15</div>
+  <div class="timer-wrap" id="timer-wrap"><div class="timer-bar" id="timer-bar"></div></div>
+
+  <div id="quiz-card" class="card" style="display:none">
+    <div class="q-label" id="q-label"></div>
+    <div id="q-main-area"></div>
+    <div class="options" id="options-grid"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="quiz-next" onclick="nextQuestion()">Siguiente →</button>
+  </div>
+
+  <div id="sb-card" class="card" style="display:none">
+    <div class="q-label">🧩 Ordena la frase · 排列句子</div>
+    <div class="sb-prompt" id="sb-prompt"></div>
+    <div class="sb-drop-zone" id="sb-drop"></div>
+    <div class="sb-hint">↑ Haz clic para colocar / Clic para devolver</div>
+    <div class="word-bank" id="sb-bank"></div>
+    <div class="btn-row">
+      <button class="action-btn btn-clear" onclick="clearSentence()">Borrar ✕</button>
+      <button class="action-btn btn-check" id="sb-check-btn" onclick="checkSentence()">Comprobar ✓</button>
+    </div>
+    <div class="feedback" id="sb-feedback"></div>
+    <button class="next-btn" id="sb-next" onclick="nextQuestion()">Siguiente →</button>
+  </div>
+
+  <div id="results" style="display:none">
+    <div class="results-title">¡Completado! 🎊</div>
+    <div class="results-score" id="final-score">0</div>
+    <div class="results-label">puntos · 分</div>
+    <div class="results-grade" id="final-grade"></div>
+    <div style="margin-top:1rem">
+      <button class="restart-btn" onclick="startGame()">Repetir ↺</button>
+      <button class="nb-open-btn" onclick="openNotebook()">📖 Errores</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-overlay" onclick="modalOutsideClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📖 Cuaderno de errores · 错题本</div>
+      <button class="modal-close" onclick="closeNotebook()">✕</button>
+    </div>
+    <div class="modal-body" id="nb-body"></div>
+    <div class="modal-footer">
+      <span class="nb-count" id="nb-count">0 errores</span>
+      <button class="nb-clear-btn" onclick="clearNotebook()">Borrar todo</button>
+    </div>
+  </div>
+</div>
+
+<img id="logo-data" src="../school-logo.jpg" style="display:none" alt="">
+
+<script>
+document.getElementById("logo-img").src = document.getElementById("logo-data").src;
+
+const vocab = [
+  { hanzi:"教室", pinyin:"jiàoshì", zh:"教室", es:"aula, sala de clase" },
+  { hanzi:"节目", pinyin:"jiémù", zh:"节目", es:"programa (TV/radio)" },
+  { hanzi:"节日", pinyin:"jiérì", zh:"节日", es:"día festivo, festividad" },
+  { hanzi:"家", pinyin:"jiā", zh:"家", es:"casa, hogar; clasificador para empresas" },
+  { hanzi:"街道", pinyin:"jiēdào", zh:"街道", es:"calle, avenida" },
+  { hanzi:"姐姐", pinyin:"jiějie", zh:"姐姐", es:"hermana mayor" },
+  { hanzi:"角", pinyin:"jiǎo", zh:"角", es:"jiao (0,1 yuan); ángulo" },
+  { hanzi:"脚", pinyin:"jiǎo", zh:"脚", es:"pie" },
+  { hanzi:"季节", pinyin:"jìjié", zh:"季节", es:"estación del año, temporada" },
+  { hanzi:"句子", pinyin:"jùzi", zh:"句子", es:"oración, frase" },
+  { hanzi:"机场", pinyin:"jīchǎng", zh:"机场", es:"aeropuerto" },
+  { hanzi:"鸡蛋", pinyin:"jīdàn", zh:"鸡蛋", es:"huevo" },
+  { hanzi:"机会", pinyin:"jīhuì", zh:"机会", es:"oportunidad, ocasión" },
+  { hanzi:"经理", pinyin:"jīnglǐ", zh:"经理", es:"gerente, director" },
+  { hanzi:"今天", pinyin:"jīntiān", zh:"今天", es:"hoy" },
+  { hanzi:"筷子", pinyin:"kuàizi", zh:"筷子", es:"palillos chinos" },
+  { hanzi:"课", pinyin:"kè", zh:"课", es:"lección, clase" },
+  { hanzi:"刻", pinyin:"kè", zh:"刻", es:"cuarto de hora, 15 minutos" },
+  { hanzi:"客人", pinyin:"kèrén", zh:"客人", es:"invitado, huésped, cliente" },
+  { hanzi:"裤子", pinyin:"kùzi", zh:"裤子", es:"pantalones" },
+  { hanzi:"咖啡", pinyin:"kāfēi", zh:"咖啡", es:"café" },
+  { hanzi:"空调", pinyin:"kōngtiáo", zh:"空调", es:"aire acondicionado" },
+  { hanzi:"考试", pinyin:"kǎoshì", zh:"考试", es:"examen; hacer un examen" },
+  { hanzi:"口", pinyin:"kǒu", zh:"口", es:"boca; clasificador para personas de familia" },
+  { hanzi:"脸", pinyin:"liǎn", zh:"脸", es:"cara, rostro" }
+];
+const sentences = [
+  { words:['教室', '里', '有', '二十', '个', '学生'], es:"En el aula hay veinte alumnos.", pinyin:"Jiàoshì lǐ yǒu èrshí ge xuésheng.", note:"教室 = aula" },
+  { words:['我', '最', '喜欢', '看', '体育', '节目'], es:"Mi programa favorito es el de deportes.", pinyin:"Wǒ zuì xǐhuan kàn tǐyù jiémù.", note:"节目 = programa" },
+  { words:['春节', '是', '中国', '最', '重要', '的', '节日'], es:"El Año Nuevo chino es la festividad más importante de China.", pinyin:"Chūnjié shì Zhōngguó zuì zhòngyào de jiérì.", note:"节日 = festividad" },
+  { words:['我', '家', '有', '三', '口', '人'], es:"En mi familia somos tres personas.", pinyin:"Wǒ jiā yǒu sān kǒu rén.", note:"家 = familia" },
+  { words:['这', '条', '街道', '上', '有', '很多', '餐厅'], es:"En esta calle hay muchos restaurantes.", pinyin:"Zhè tiáo jiēdào shàng yǒu hěn duō cāntīng.", note:"街道 = calle" },
+  { words:['我', '姐姐', '比', '我', '大', '五', '岁'], es:"Mi hermana mayor me lleva cinco años.", pinyin:"Wǒ jiějie bǐ wǒ dà wǔ suì.", note:"姐姐 = hermana mayor" },
+  { words:['这', '双', '鞋子', '多少', '钱', '？', '十六', '块', '八', '角'], es:"¿Cuánto cuestan estos zapatos? Dieciséis yuanes con ocho jiao.", pinyin:"Zhè shuāng xiézi duōshao qián? Shíliù kuài bā jiǎo.", note:"角 = jiao (0,1 yuan)" },
+  { words:['我', '的', '脚', '很', '疼', '，', '走', '不', '了', '路'], es:"Me duele mucho el pie, no puedo caminar.", pinyin:"Wǒ de jiǎo hěn téng, zǒu bu liǎo lù.", note:"脚 = pie" },
+  { words:['我', '最', '喜欢', '秋天', '，', '天气', '很', '舒服'], es:"Mi estación favorita es el otoño, el tiempo es muy agradable.", pinyin:"Wǒ zuì xǐhuan qiūtiān, tiānqì hěn shūfu.", note:"季节 = estación del año" },
+  { words:['这', '道', '题', '的', '句子', '太', '长', '了', '，', '很', '难', '翻译'], es:"La oración de este ejercicio es demasiado larga, es muy difícil de traducir.", pinyin:"Zhè dào tí de jùzi tài cháng le, hěn nán fānyì.", note:"句子 = oración / frase" },
+  { words:['我', '在', '机场', '等', '了', '两', '个', '小时'], es:"Esperé dos horas en el aeropuerto.", pinyin:"Wǒ zài jīchǎng děng le liǎng ge xiǎoshí.", note:"机场 = aeropuerto" },
+  { words:['冰箱', '里', '有', '三', '个', '鸡蛋'], es:"En la nevera hay tres huevos.", pinyin:"Bīngxiāng lǐ yǒu sān ge jīdàn.", note:"鸡蛋 = huevo" },
+  { words:['这', '次', '考试', '是', '一', '个', '很', '好', '的', '机会'], es:"Este examen es una muy buena oportunidad.", pinyin:"Zhè cì kǎoshì shì yí ge hěn hǎo de jīhuì.", note:"机会 = oportunidad" },
+  { words:['我', '想', '见', '一下', '你们', '的', '经理'], es:"Quisiera hablar con su gerente.", pinyin:"Wǒ xiǎng jiàn yíxià nǐmen de jīnglǐ.", note:"经理 = gerente" },
+  { words:['今天', '天气', '很', '好', '，', '我们', '出去', '走走', '吧'], es:"Hoy hace buen tiempo, vamos a dar un paseo.", pinyin:"Jīntiān tiānqì hěn hǎo, wǒmen chūqù zǒuzou ba.", note:"今天 = hoy" },
+  { words:['你', '会', '用', '筷子', '吗'], es:"¿Sabes usar palillos?", pinyin:"Nǐ huì yòng kuàizi ma?", note:"筷子 = palillos" },
+  { words:['今天', '有', '三', '节', '课', '，', '很', '累'], es:"Hoy tenemos tres clases, estoy muy cansado/a.", pinyin:"Jīntiān yǒu sān jié kè, hěn lèi.", note:"课 = clase" },
+  { words:['现在', '是', '三', '点', '一', '刻'], es:"Ahora son las tres y cuarto.", pinyin:"Xiànzài shì sān diǎn yí kè.", note:"刻 = cuarto de hora" },
+  { words:['今晚', '我', '家', '来', '了', '几', '个', '客人'], es:"Esta noche vinieron varios invitados a mi casa.", pinyin:"Jīn wǎn wǒ jiā lái le jǐ ge kèrén.", note:"客人 = invitados" },
+  { words:['这', '条', '裤子', '太', '短', '了', '，', '能', '换', '一', '条', '吗'], es:"Estos pantalones son demasiado cortos, ¿puedo cambiarlos?", pinyin:"Zhè tiáo kùzi tài duǎn le, néng huàn yì tiáo ma?", note:"裤子 = pantalones" },
+  { words:['我', '每天', '早上', '喝', '一', '杯', '咖啡'], es:"Cada mañana bebo una taza de café.", pinyin:"Wǒ měitiān zǎoshang hē yì bēi kāfēi.", note:"咖啡 = café" },
+  { words:['天气', '太', '热', '了', '，', '开', '一下', '空调', '吧'], es:"Hace demasiado calor, enciende el aire acondicionado.", pinyin:"Tiānqì tài rè le, kāi yíxià kōngtiáo ba.", note:"空调 = aire acondicionado" },
+  { words:['明天', '有', '考试', '，', '我', '要', '好好', '复习'], es:"Mañana hay examen, tengo que repasar bien.", pinyin:"Míngtiān yǒu kǎoshì, wǒ yào hǎohǎo fùxí.", note:"考试 = examen" },
+  { words:['请问', '洗手间', '在', '哪儿'], es:"Disculpe, ¿dónde está el baño?", pinyin:"Qǐngwèn xǐshǒujiān zài nǎr?", note:"口 → 洗手间" },
+  { words:['她', '的', '脸', '很', '漂亮'], es:"Tiene una cara muy bonita.", pinyin:"Tā de liǎn hěn piàoliang.", note:"脸 = cara" }
+];
+
+function pyHz(hanzi, pinyin, pySize, hzSize) {
+  return `<div class="pyhz-block">
+    <div class="pyhz-py" style="font-size:${pySize}">${pinyin}</div>
+    <div class="pyhz-hz" style="font-size:${hzSize}">${hanzi}</div>
+  </div>`;
+}
+
+let mode="zh_es", questions=[], current=0, score=0, streak=0, answered=false;
+let soundOn=window.innerWidth>=768, timerMode=false, timerIv=null, timeLeft=15;
+const TOTAL=25, SB_TOTAL=sentences.length, TIME_MAX=15;
+let sbSentence=null, sbPlaced=[], sbBank=[], sbChecked=false;
+let wrongItems=JSON.parse(sessionStorage.getItem("wItems_gcc_hsk3_4")||"[]");
+
+const AC=window.AudioContext||window.webkitAudioContext; let ac;
+function getAC(){if(!ac)ac=new AC();return ac;}
+function playTone(type){
+  if(!soundOn)return;
+  try{
+    const a=getAC(),t=a.currentTime,g=a.createGain(),o=a.createOscillator();
+    g.connect(a.destination);o.connect(g);
+    if(type==="correct"){o.frequency.setValueAtTime(523,t);o.frequency.setValueAtTime(659,t+0.1);o.frequency.setValueAtTime(784,t+0.2);g.gain.setValueAtTime(0.2,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.5);o.start(t);o.stop(t+0.5);}
+    else if(type==="streak"){[523,659,784,1047].forEach((f,i)=>{const o2=a.createOscillator(),g2=a.createGain();o2.connect(g2);g2.connect(a.destination);o2.frequency.value=f;g2.gain.setValueAtTime(0.18,t+i*0.1);g2.gain.exponentialRampToValueAtTime(0.001,t+i*0.1+0.3);o2.start(t+i*0.1);o2.stop(t+i*0.1+0.3);});}
+    else if(type==="wrong"){o.type="sawtooth";o.frequency.setValueAtTime(220,t);o.frequency.setValueAtTime(180,t+0.15);g.gain.setValueAtTime(0.15,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.4);o.start(t);o.stop(t+0.4);}
+    else if(type==="timeout"){o.type="triangle";o.frequency.setValueAtTime(300,t);o.frequency.linearRampToValueAtTime(100,t+0.5);g.gain.setValueAtTime(0.2,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.5);o.start(t);o.stop(t+0.5);}
+    else if(type==="click"){o.frequency.value=440;g.gain.setValueAtTime(0.08,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.1);o.start(t);o.stop(t+0.1);}
+    else if(type==="finish"){[523,659,784,659,784,1047].forEach((f,i)=>{const o2=a.createOscillator(),g2=a.createGain();o2.connect(g2);g2.connect(a.destination);o2.frequency.value=f;g2.gain.setValueAtTime(0.15,t+i*0.12);g2.gain.exponentialRampToValueAtTime(0.001,t+i*0.12+0.2);o2.start(t+i*0.12);o2.stop(t+i*0.12+0.25);});}
+  }catch(e){}
+}
+
+function toggleSound(){soundOn=!soundOn;const b=document.getElementById("sound-btn");b.textContent=soundOn?"🔊":"🔇";b.classList.toggle("active",soundOn);}
+document.addEventListener("DOMContentLoaded",function(){var b=document.getElementById("sound-btn");if(b&&!soundOn){b.textContent="🔇";b.classList.remove("active");}});
+function toggleTimer(){timerMode=!timerMode;document.getElementById("timer-btn").classList.toggle("active",timerMode);const show=timerMode&&mode!=="sentence";document.getElementById("timer-wrap").classList.toggle("visible",show);document.getElementById("timer-num").classList.toggle("visible",show);startGame();}
+function setMode(m,el){mode=m;document.querySelectorAll(".mode-btn").forEach(b=>b.classList.remove("active"));el.classList.add("active");const show=timerMode&&mode!=="sentence";document.getElementById("timer-wrap").classList.toggle("visible",show);document.getElementById("timer-num").classList.toggle("visible",show);startGame();}
+function shuffle(arr){return[...arr].sort(()=>Math.random()-0.5);}
+function startGame(){score=0;streak=0;current=0;answered=false;stopTimer();questions=mode==="sentence"?shuffle(sentences):shuffle(vocab).slice(0,TOTAL);document.getElementById("results").style.display="none";updateScoreBar();loadQuestion();}
+function updateScoreBar(){const total=mode==="sentence"?SB_TOTAL:TOTAL;document.getElementById("score-val").textContent=score;document.getElementById("streak-val").textContent="🔥 "+streak;document.getElementById("q-val").textContent=(current+1)+"/"+total;document.getElementById("progress-bar").style.width=(current/total*100)+"%";}
+function loadQuestion(){answered=false;document.getElementById("quiz-card").style.display="none";document.getElementById("sb-card").style.display="none";if(mode==="sentence")loadSentenceQ();else loadQuizQ();updateScoreBar();}
+
+function loadQuizQ(){
+  const q=questions[current];
+  const area=document.getElementById("q-main-area");
+  const grid=document.getElementById("options-grid");
+  document.getElementById("feedback").textContent="";
+  document.getElementById("feedback").className="feedback";
+  document.getElementById("quiz-next").className="next-btn";
+  grid.innerHTML="";
+
+  if(mode==="zh_es"){
+    document.getElementById("q-label").textContent="Elige la traducción al español · 选择西班牙文翻译";
+    area.innerHTML=`<div class="main-word">${pyHz(q.hanzi,q.pinyin,'1rem','3rem')}</div>`;
+    const correct=q.es;
+    shuffle([correct,...shuffle(vocab.filter(v=>v!==q).map(v=>v.es)).slice(0,3)]).forEach(opt=>{
+      const b=document.createElement("button");b.className="opt-btn";
+      b.innerHTML=`<span class="opt-es-text">${opt}</span>`;b.dataset.val=opt;
+      b.onclick=()=>checkAnswer(b,correct,q);grid.appendChild(b);
+    });
+  }
+  else if(mode==="es_zh"){
+    document.getElementById("q-label").textContent="Elige el carácter chino correcto · 选择正确的汉字";
+    area.innerHTML=`<div class="es-big">${q.es}</div>`;
+    const correct=q.hanzi;
+    shuffle([correct,...shuffle(vocab.filter(v=>v!==q).map(v=>v.hanzi)).slice(0,3)]).forEach(opt=>{
+      const v=vocab.find(x=>x.hanzi===opt)||{pinyin:""};
+      const b=document.createElement("button");b.className="opt-btn";
+      b.innerHTML=`<div class="opt-pyhz-wrap">${pyHz(opt,v.pinyin,'0.68rem','1.5rem')}</div>`;
+      b.dataset.val=opt;b.onclick=()=>checkAnswer(b,correct,q);grid.appendChild(b);
+    });
+  }
+  else if(mode==="pinyin_es"){
+    document.getElementById("q-label").textContent="Elige la traducción al español · 根据汉字选择";
+    area.innerHTML=`<div class="py-main"><div class="py-main-hz" style="font-size:3rem;">${q.hanzi}</div></div>`;
+    const correct=q.es;
+    shuffle([correct,...shuffle(vocab.filter(v=>v!==q).map(v=>v.es)).slice(0,3)]).forEach(opt=>{
+      const b=document.createElement("button");b.className="opt-btn";
+      b.innerHTML=`<span class="opt-es-text">${opt}</span>`;b.dataset.val=opt;
+      b.onclick=()=>checkAnswer(b,correct,q);grid.appendChild(b);
+    });
+  }
+
+  const card=document.getElementById("quiz-card");card.style.display="block";card.style.animation="none";card.offsetHeight;card.style.animation="";
+  if(timerMode)startTimer();
+}
+
+function checkAnswer(btn,correct,q){
+  if(answered)return;answered=true;stopTimer();
+  const chosen=btn.dataset.val;
+  document.querySelectorAll(".opt-btn").forEach(b=>{b.disabled=true;if(b.dataset.val===correct)b.classList.add("correct");});
+  const fb=document.getElementById("feedback");
+  if(chosen===correct){
+    btn.classList.add("correct");const bonus=timerMode?Math.ceil(timeLeft/TIME_MAX*5):0;score+=10+streak*2+bonus;streak++;
+    if(streak>=3){playTone("streak");spawnParticles(btn,["🔥","⭐","💥"]);}else{playTone("correct");spawnParticles(btn,["✨","⭐","🎉"]);}
+    fb.textContent=streak>2?"🔥 Racha x"+streak+"！"+(bonus?"+"+bonus+" pts":"")+" ¡Excelente!":"✓ ¡Correcto!";fb.className="feedback correct";
+  }else{
+    btn.classList.add("wrong");playTone("wrong");streak=0;
+    fb.innerHTML="✗ Respuesta: <strong>"+correct+"</strong>";fb.className="feedback wrong";
+    document.getElementById("quiz-card").classList.add("shake");setTimeout(()=>document.getElementById("quiz-card").classList.remove("shake"),400);
+    addToNotebook(q);
+  }
+  document.getElementById("score-val").textContent=score;document.getElementById("streak-val").textContent="🔥 "+streak;
+  document.getElementById("quiz-next").className="next-btn show";
+}
+
+function loadSentenceQ(){
+  sbSentence=questions[current];sbPlaced=[];sbBank=shuffle([...sbSentence.words]);sbChecked=false;
+  document.getElementById("sb-prompt").innerHTML="<strong>"+sbSentence.es+"</strong>"+(sbSentence.note?"<br><small style='color:#5a9a80;font-size:0.75rem'>词汇："+sbSentence.note+"</small>":"");
+  document.getElementById("sb-feedback").textContent="";document.getElementById("sb-feedback").className="feedback";
+  document.getElementById("sb-next").className="next-btn";document.getElementById("sb-check-btn").disabled=false;
+  renderDropZone();renderWordBank();
+  const card=document.getElementById("sb-card");card.style.display="block";card.style.animation="none";card.offsetHeight;card.style.animation="";
+}
+function renderDropZone(){const dz=document.getElementById("sb-drop");dz.innerHTML="";if(sbPlaced.length===0){dz.innerHTML="<span style='color:#9aba9a;font-size:0.82rem;'>Coloca las palabras aquí · 把词语放到这里</span>";return;}sbPlaced.forEach((w,i)=>{const c=document.createElement("span");c.className="chip placed";c.textContent=w;c.onclick=(e)=>{e.stopPropagation();returnChip(i);};dz.appendChild(c);});}
+function renderWordBank(){const bank=document.getElementById("sb-bank");bank.innerHTML="";sbBank.forEach((w,i)=>{const c=document.createElement("span");c.className="chip bank";c.textContent=w;c.onclick=()=>placeChip(i);bank.appendChild(c);});}
+function placeChip(i){if(sbChecked)return;playTone("click");sbPlaced.push(sbBank[i]);sbBank.splice(i,1);renderDropZone();renderWordBank();}
+function returnChip(i){if(sbChecked)return;playTone("click");sbBank.push(sbPlaced[i]);sbPlaced.splice(i,1);renderDropZone();renderWordBank();}
+function clearSentence(){if(sbChecked)return;sbBank=shuffle([...sbSentence.words]);sbPlaced=[];renderDropZone();renderWordBank();}
+function checkSentence(){
+  if(sbChecked)return;
+  if(sbPlaced.length===0){document.getElementById("sb-feedback").textContent="¡Coloca las palabras primero!";document.getElementById("sb-feedback").className="feedback wrong";return;}
+  sbChecked=true;document.getElementById("sb-check-btn").disabled=true;
+  const correct=sbSentence.words;
+  const isOK=sbPlaced.length===correct.length&&sbPlaced.every((w,i)=>w===correct[i]);
+  document.getElementById("sb-drop").querySelectorAll(".chip").forEach((chip,i)=>{chip.onclick=null;chip.classList.add(i<correct.length&&chip.textContent===correct[i]?"correct-chip":"wrong-chip");});
+  const fb=document.getElementById("sb-feedback");
+  if(isOK){
+    score+=15+streak*2;streak++;
+    if(streak>=3){playTone("streak");spawnParticles(document.getElementById("sb-drop"),["🔥","⭐","💥"]);}else{playTone("correct");spawnParticles(document.getElementById("sb-drop"),["✨","📝","🎉"]);}
+    fb.innerHTML=(streak>2?"🔥 Racha x"+streak+"！¡Increíble!":"✓ ¡Muy bien!")+(sbSentence.pinyin?"<br><small style='opacity:0.8;'>"+sbSentence.pinyin+"</small>":"");
+    fb.className="feedback correct";
+  }else{
+    playTone("wrong");streak=0;
+    fb.innerHTML="✗ Orden correcto: <small style='color:#e07070;'>"+sbSentence.pinyin+"</small><br><strong>"+correct.join(" ")+"</strong>";
+    fb.className="feedback wrong";
+    document.getElementById("sb-card").classList.add("shake");setTimeout(()=>document.getElementById("sb-card").classList.remove("shake"),400);
+    addToNotebook({hanzi:sbSentence.words.join(""),pinyin:"句子",es:sbSentence.es});
+  }
+  document.getElementById("score-val").textContent=score;document.getElementById("streak-val").textContent="🔥 "+streak;
+  document.getElementById("sb-next").className="next-btn show";
+}
+
+function nextQuestion(){const total=mode==="sentence"?SB_TOTAL:TOTAL;current++;if(current>=total)showResults();else loadQuestion();}
+function showResults(){
+  playTone("finish");stopTimer();
+  document.getElementById("quiz-card").style.display="none";document.getElementById("sb-card").style.display="none";
+  document.getElementById("results").style.display="block";document.getElementById("final-score").textContent=score;
+  document.getElementById("progress-bar").style.width="100%";
+  const pct=score/((mode==="sentence"?SB_TOTAL*17:TOTAL*12));
+  let grade,color;
+  if(pct>=0.88){grade="🏆 优秀 ¡Excelente!";color="#2a5c35";}else if(pct>=0.65){grade="🌟 良好 ¡Muy bien!";color="#2a7a60";}else if(pct>=0.45){grade="👍 合格 ¡Bien!";color="#4a9a80";}else{grade="📚 加油 ¡Sigue practicando!";color="#c05050";}
+  const el=document.getElementById("final-grade");el.textContent=grade;el.style.color=color;
+}
+function startTimer(){timeLeft=TIME_MAX;updateTimerUI();timerIv=setInterval(()=>{timeLeft-=0.1;updateTimerUI();if(timeLeft<=0){clearInterval(timerIv);onTimeout();}},100);}
+function stopTimer(){clearInterval(timerIv);timerIv=null;}
+function updateTimerUI(){const pct=timeLeft/TIME_MAX,bar=document.getElementById("timer-bar"),num=document.getElementById("timer-num");bar.style.width=(pct*100)+"%";num.textContent=Math.ceil(timeLeft)+"s";const cls=pct>0.5?"":pct>0.25?"warning":"danger";bar.className="timer-bar"+(cls?" "+cls:"");num.className="timer-num visible"+(cls?" "+cls:"");}
+function onTimeout(){if(answered)return;answered=true;playTone("timeout");streak=0;document.getElementById("streak-val").textContent="🔥 0";document.querySelectorAll(".opt-btn").forEach(b=>b.disabled=true);const q=questions[current];document.getElementById("feedback").innerHTML="⏰ Tiempo: <strong>"+q.es+"</strong>";document.getElementById("feedback").className="feedback wrong";document.getElementById("quiz-next").className="next-btn show";addToNotebook(q);}
+function addToNotebook(q){if(!wrongItems.some(w=>w.hanzi===q.hanzi)){wrongItems.push(q);sessionStorage.setItem("wItems_gcc_hsk3_4",JSON.stringify(wrongItems));}}
+function openNotebook(){const body=document.getElementById("nb-body");if(wrongItems.length===0){body.innerHTML="<div class='notebook-empty'>🎉 ¡Sin errores! 没有错题</div>";}else{body.innerHTML=wrongItems.map(w=>`<div class='notebook-item'><div><div class='nb-hz'>${w.hanzi}</div><div class='nb-py'>${w.pinyin||""}</div></div><div><div style='font-size:0.65rem;color:#9abab0;'>Español</div><div class='nb-es'>${w.es}</div></div></div>`).join("");}document.getElementById("nb-count").textContent=wrongItems.length+" errores";document.getElementById("modal-overlay").classList.add("open");}
+function closeNotebook(){document.getElementById("modal-overlay").classList.remove("open");}
+function modalOutsideClick(e){if(e.target===document.getElementById("modal-overlay"))closeNotebook();}
+function clearNotebook(){wrongItems=[];sessionStorage.removeItem("wItems_gcc_hsk3_4");openNotebook();}
+function spawnParticles(el,emojis){const rect=el.getBoundingClientRect();for(let i=0;i<6;i++){const p=document.createElement("div");p.className="particle";p.textContent=emojis[Math.floor(Math.random()*emojis.length)];p.style.left=(rect.left+rect.width/2+(Math.random()-0.5)*80)+"px";p.style.top=(rect.top+rect.height/2)+"px";p.style.animationDelay=(i*0.07)+"s";document.body.appendChild(p);setTimeout(()=>p.remove(),1400);}}
+startGame();
+</script>
+<script src="../common.js"></script>
+</body>
+</html>

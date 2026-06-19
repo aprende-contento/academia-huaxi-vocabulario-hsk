@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HSK3词汇练习11 · 华西书院</title>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="exercise.css">
+</head>
+<body>
+<header>
+  <div class="header-top">
+    <a href="GCC_HSK3_index.html" style="display:flex;align-items:center;gap:0.35rem;padding:0.35rem 0.85rem;border-radius:99px;border:1.5px solid rgba(60,140,80,0.35);background:rgba(255,255,255,0.7);color:#2a6a3a;font-size:0.78rem;font-weight:700;text-decoration:none;transition:all .2s;margin-right:0.5rem;white-space:nowrap;" onmouseover="this.style.background='#7a9e7e';this.style.color='#fff'" onmouseout="this.style.background='rgba(255,255,255,0.7)';this.style.color='#2a6a3a'">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+      <span class="volver-text">Volver</span>
+    </a>
+    
+    <div class="title-zh">HSK3词汇练习11</div>
+    <img class="logo-img" id="logo-img" src="" alt="华西书院">
+  </div>
+  <div class="toolbar">
+    <div class="score-bar">
+      <div class="score-item"><span class="score-label">得分 Puntos</span><span class="score-val" id="score-val">0</span></div>
+      <div class="score-item"><span class="score-label">连击 Racha</span><span class="score-val" id="streak-val">🔥 0</span></div>
+      <div class="score-item"><span class="score-label">题目 Preg.</span><span class="score-val" id="q-val">1/25</span></div>
+    </div>
+    <div class="tool-group">
+      <button class="tool-btn active" id="sound-btn" onclick="toggleSound()">🔊</button>
+      <button class="tool-btn" id="timer-btn" onclick="toggleTimer()">⏱️</button>
+      <div class="tool-btn-nb-wrap">
+        <button class="tool-btn-nb" id="nb-btn" onclick="openNotebook()">📖</button>
+        <span class="tool-btn-nb-label">Errores</span>
+      </div>
+    </div>
+  </div>
+  <div class="mode-tabs">
+    <button class="mode-btn active" onclick="setMode('zh_es',this)">中文→Español</button>
+    <button class="mode-btn" onclick="setMode('es_zh',this)">Español→中文</button>
+    <button class="mode-btn" onclick="setMode('pinyin_es',this)">汉字→Español</button>
+    <button class="mode-btn" onclick="setMode('sentence',this)">🧩 Ordenar frase</button>
+  </div>
+</header>
+
+<div id="game-area">
+  <div class="progress-wrap"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
+  <div class="timer-num" id="timer-num">15</div>
+  <div class="timer-wrap" id="timer-wrap"><div class="timer-bar" id="timer-bar"></div></div>
+
+  <div id="quiz-card" class="card" style="display:none">
+    <div class="q-label" id="q-label"></div>
+    <div id="q-main-area"></div>
+    <div class="options" id="options-grid"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="quiz-next" onclick="nextQuestion()">Siguiente →</button>
+  </div>
+
+  <div id="sb-card" class="card" style="display:none">
+    <div class="q-label">🧩 Ordena la frase · 排列句子</div>
+    <div class="sb-prompt" id="sb-prompt"></div>
+    <div class="sb-drop-zone" id="sb-drop"></div>
+    <div class="sb-hint">↑ Haz clic para colocar / Clic para devolver</div>
+    <div class="word-bank" id="sb-bank"></div>
+    <div class="btn-row">
+      <button class="action-btn btn-clear" onclick="clearSentence()">Borrar ✕</button>
+      <button class="action-btn btn-check" id="sb-check-btn" onclick="checkSentence()">Comprobar ✓</button>
+    </div>
+    <div class="feedback" id="sb-feedback"></div>
+    <button class="next-btn" id="sb-next" onclick="nextQuestion()">Siguiente →</button>
+  </div>
+
+  <div id="results" style="display:none">
+    <div class="results-title">¡Completado! 🎊</div>
+    <div class="results-score" id="final-score">0</div>
+    <div class="results-label">puntos · 分</div>
+    <div class="results-grade" id="final-grade"></div>
+    <div style="margin-top:1rem">
+      <button class="restart-btn" onclick="startGame()">Repetir ↺</button>
+      <button class="nb-open-btn" onclick="openNotebook()">📖 Errores</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-overlay" onclick="modalOutsideClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📖 Cuaderno de errores · 错题本</div>
+      <button class="modal-close" onclick="closeNotebook()">✕</button>
+    </div>
+    <div class="modal-body" id="nb-body"></div>
+    <div class="modal-footer">
+      <span class="nb-count" id="nb-count">0 errores</span>
+      <button class="nb-clear-btn" onclick="clearNotebook()">Borrar todo</button>
+    </div>
+  </div>
+</div>
+
+<img id="logo-data" src="../school-logo.jpg" style="display:none" alt="">
+
+<script>
+document.getElementById("logo-img").src = document.getElementById("logo-data").src;
+
+const vocab = [
+  { hanzi:"懂", pinyin:"dǒng", zh:"懂", es:"entender, comprender" },
+  { hanzi:"打扫", pinyin:"dǎsǎo", zh:"打扫", es:"limpiar, barrer" },
+  { hanzi:"打算", pinyin:"dǎsuàn", zh:"打算", es:"planear, tener intención de" },
+  { hanzi:"等", pinyin:"děng", zh:"等", es:"esperar" },
+  { hanzi:"发现", pinyin:"fāxiàn", zh:"发现", es:"descubrir, darse cuenta de" },
+  { hanzi:"放", pinyin:"fàng", zh:"放", es:"poner, colocar; dejar libre" },
+  { hanzi:"复习", pinyin:"fùxí", zh:"复习", es:"repasar, revisar" },
+  { hanzi:"干净", pinyin:"gānjìng", zh:"干净", es:"limpio, aseado" },
+  { hanzi:"告诉", pinyin:"gàosu", zh:"告诉", es:"decir, contar, informar" },
+  { hanzi:"感觉", pinyin:"gǎnjué", zh:"感觉", es:"sentir; sensación, percepción" },
+  { hanzi:"感谢", pinyin:"gǎnxiè", zh:"感谢", es:"agradecer, dar las gracias" },
+  { hanzi:"跟", pinyin:"gēn", zh:"跟", es:"seguir; con, y" },
+  { hanzi:"给", pinyin:"gěi", zh:"给", es:"dar; para" },
+  { hanzi:"关", pinyin:"guān", zh:"关", es:"cerrar, apagar" },
+  { hanzi:"关心", pinyin:"guānxīn", zh:"关心", es:"preocuparse por, importar" },
+  { hanzi:"过", pinyin:"guò", zh:"过", es:"pasar; partícula de experiencia pasada" },
+  { hanzi:"害怕", pinyin:"hàipà", zh:"害怕", es:"tener miedo, asustarse" },
+  { hanzi:"回答", pinyin:"huídá", zh:"回答", es:"responder, contestar" },
+  { hanzi:"欢迎", pinyin:"huānyíng", zh:"欢迎", es:"dar la bienvenida, bienvenido/a" },
+  { hanzi:"换", pinyin:"huàn", zh:"换", es:"cambiar, intercambiar" },
+  { hanzi:"花", pinyin:"huā", zh:"花", es:"gastar (dinero/tiempo); flor" },
+  { hanzi:"介绍", pinyin:"jièshào", zh:"介绍", es:"presentar, introducir" },
+  { hanzi:"进", pinyin:"jìn", zh:"进", es:"entrar" },
+  { hanzi:"举行", pinyin:"jǔxíng", zh:"举行", es:"celebrar, realizar (un evento)" },
+  { hanzi:"检查", pinyin:"jiǎnchá", zh:"检查", es:"revisar, examinar, chequear" }
+];
+const sentences = [
+  { words:['这', '个', '词', '我', '不', '懂', '，', '能', '解释', '一下', '吗'], es:"No entiendo esta palabra, ¿puedes explicarla?", pinyin:"Zhège cí wǒ bù dǒng, néng jiěshì yíxià ma?", note:"懂 = entender" },
+  { words:['我', '每', '周末', '打扫', '房间'], es:"Limpio la habitación cada fin de semana.", pinyin:"Wǒ měi zhōumò dǎsǎo fángjiān.", note:"打扫 = limpiar" },
+  { words:['你', '打算', '去', '哪里', '旅游'], es:"¿Dónde planeas ir de viaje?", pinyin:"Nǐ dǎsuàn qù nǎlǐ lǚyóu?", note:"打算 = planear / tener intención de" },
+  { words:['你', '等', '我', '五', '分钟', '，', '我', '马上', '来'], es:"Espérame cinco minutos, enseguida voy.", pinyin:"Nǐ děng wǒ wǔ fēnzhōng, wǒ mǎshàng lái.", note:"等 = esperar" },
+  { words:['我', '发现', '钱包', '不', '见', '了'], es:"Me di cuenta de que la cartera había desaparecido.", pinyin:"Wǒ fāxiàn qiánbāo bú jiàn le.", note:"发现 = darse cuenta de / descubrir" },
+  { words:['请', '把', '书', '放', '在', '桌子', '上'], es:"Por favor pon el libro encima de la mesa.", pinyin:"Qǐng bǎ shū fàng zài zhuōzi shàng.", note:"放 = poner / colocar" },
+  { words:['考试', '前', '我', '要', '好好', '复习'], es:"Antes del examen tengo que repasar bien.", pinyin:"Kǎoshì qián wǒ yào hǎohǎo fùxí.", note:"复习 = repasar" },
+  { words:['妈妈', '把', '厨房', '打扫', '得', '很', '干净'], es:"Mamá limpió la cocina muy bien.", pinyin:"Māma bǎ chúfáng dǎsǎo de hěn gānjìng.", note:"干净 = limpio" },
+  { words:['老师', '告诉', '我们', '明天', '没有', '课'], es:"La profesora nos dijo que mañana no hay clase.", pinyin:"Lǎoshī gàosu wǒmen míngtiān méiyǒu kè.", note:"告诉 = decir / contar" },
+  { words:['我', '感觉', '今天', '有点儿', '冷'], es:"Siento que hoy hace un poco de frío.", pinyin:"Wǒ gǎnjué jīntiān yǒudiǎnr lěng.", note:"感觉 = sentir / sensación" },
+  { words:['我', '很', '感谢', '你', '帮助', '了', '我'], es:"Te estoy muy agradecido/a por haberme ayudado.", pinyin:"Wǒ hěn gǎnxiè nǐ bāngzhù le wǒ.", note:"感谢 = agradecer" },
+  { words:['你', '跟', '我', '一起', '去', '吧', '，', '我', '不', '想', '一个人', '去'], es:"Ven conmigo, no quiero ir solo/a.", pinyin:"Nǐ gēn wǒ yìqǐ qù ba, wǒ bù xiǎng yí ge rén qù.", note:"跟 = con / y" },
+  { words:['妈妈', '给', '了', '我', '一', '个', '礼物'], es:"Mamá me dio un regalo.", pinyin:"Māma gěi le wǒ yí ge lǐwù.", note:"给 = dar / para" },
+  { words:['出门', '时', '别', '忘', '了', '关', '灯'], es:"Al salir no olvides apagar la luz.", pinyin:"Chū mén shí bié wàng le guān dēng.", note:"关 = cerrar / apagar" },
+  { words:['老师', '很', '关心', '我们', '的', '学习'], es:"La profesora se preocupa mucho por nuestro aprendizaje.", pinyin:"Lǎoshī hěn guānxīn wǒmen de xuéxí.", note:"关心 = preocuparse por" },
+  { words:['我', '上', '个', '月', '去', '过', '北京'], es:"El mes pasado fui a Pekín.", pinyin:"Wǒ shàng ge yuè qù guo Běijīng.", note:"过 = partícula de experiencia pasada" },
+  { words:['我', '很', '害怕', '会', '迟到'], es:"Tengo mucho miedo de llegar tarde.", pinyin:"Wǒ hěn hàipà huì chídào.", note:"害怕 = tener miedo" },
+  { words:['老师', '问', '问题', '，', '学生', '回答'], es:"La profesora hace preguntas y los alumnos responden.", pinyin:"Lǎoshī wèn wèntí, xuésheng huídá.", note:"回答 = responder" },
+  { words:['欢迎', '你', '到', '我', '家'], es:"¡Bienvenido/a a mi casa!", pinyin:"Huānyíng nǐ dào wǒ jiā!", note:"欢迎 = bienvenido/a" },
+  { words:['这', '件', '衣服', '太', '大', '了', '，', '我', '想', '换', '一', '件', '小', '的'], es:"Esta ropa es demasiado grande, quiero cambiarla por una más pequeña.", pinyin:"Zhè jiàn yīfu tài dà le, wǒ xiǎng huàn yí jiàn xiǎo de.", note:"换 = cambiar" },
+  { words:['我', '每', '个', '月', '花', '很多', '钱', '买', '书'], es:"Cada mes gasto mucho dinero en libros.", pinyin:"Wǒ měi ge yuè huā hěn duō qián mǎi shū.", note:"花 = gastar" },
+  { words:['请', '让', '我', '介绍', '一下', '我', '的', '同学'], es:"Permíteme presentarte a mi compañero de clase.", pinyin:"Qǐng ràng wǒ jièshào yíxià wǒ de tóngxué.", note:"介绍 = presentar" },
+  { words:['请', '进', '，', '不', '用', '敲', '门'], es:"Pasa, no hace falta llamar.", pinyin:"Qǐng jìn, bú yòng qiāo mén.", note:"进 = entrar" },
+  { words:['学校', '明天', '举行', '运动会'], es:"Mañana el colegio celebra una jornada deportiva.", pinyin:"Xuéxiào míngtiān jǔxíng yùndònghuì.", note:"举行 = celebrar / realizar" },
+  { words:['医生', '检查', '了', '我', '的', '身体', '，', '说', '很', '健康'], es:"El médico me examinó y dijo que estaba muy sano/a.", pinyin:"Yīshēng jiǎnchá le wǒ de shēntǐ, shuō hěn jiànkāng.", note:"检查 = examinar / revisar" }
+];
+
+function pyHz(hanzi, pinyin, pySize, hzSize) {
+  return `<div class="pyhz-block">
+    <div class="pyhz-py" style="font-size:${pySize}">${pinyin}</div>
+    <div class="pyhz-hz" style="font-size:${hzSize}">${hanzi}</div>
+  </div>`;
+}
+
+let mode="zh_es", questions=[], current=0, score=0, streak=0, answered=false;
+let soundOn=window.innerWidth>=768, timerMode=false, timerIv=null, timeLeft=15;
+const TOTAL=25, SB_TOTAL=sentences.length, TIME_MAX=15;
+let sbSentence=null, sbPlaced=[], sbBank=[], sbChecked=false;
+let wrongItems=JSON.parse(sessionStorage.getItem("wItems_gcc_hsk3_11")||"[]");
+
+const AC=window.AudioContext||window.webkitAudioContext; let ac;
+function getAC(){if(!ac)ac=new AC();return ac;}
+function playTone(type){
+  if(!soundOn)return;
+  try{
+    const a=getAC(),t=a.currentTime,g=a.createGain(),o=a.createOscillator();
+    g.connect(a.destination);o.connect(g);
+    if(type==="correct"){o.frequency.setValueAtTime(523,t);o.frequency.setValueAtTime(659,t+0.1);o.frequency.setValueAtTime(784,t+0.2);g.gain.setValueAtTime(0.2,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.5);o.start(t);o.stop(t+0.5);}
+    else if(type==="streak"){[523,659,784,1047].forEach((f,i)=>{const o2=a.createOscillator(),g2=a.createGain();o2.connect(g2);g2.connect(a.destination);o2.frequency.value=f;g2.gain.setValueAtTime(0.18,t+i*0.1);g2.gain.exponentialRampToValueAtTime(0.001,t+i*0.1+0.3);o2.start(t+i*0.1);o2.stop(t+i*0.1+0.3);});}
+    else if(type==="wrong"){o.type="sawtooth";o.frequency.setValueAtTime(220,t);o.frequency.setValueAtTime(180,t+0.15);g.gain.setValueAtTime(0.15,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.4);o.start(t);o.stop(t+0.4);}
+    else if(type==="timeout"){o.type="triangle";o.frequency.setValueAtTime(300,t);o.frequency.linearRampToValueAtTime(100,t+0.5);g.gain.setValueAtTime(0.2,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.5);o.start(t);o.stop(t+0.5);}
+    else if(type==="click"){o.frequency.value=440;g.gain.setValueAtTime(0.08,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.1);o.start(t);o.stop(t+0.1);}
+    else if(type==="finish"){[523,659,784,659,784,1047].forEach((f,i)=>{const o2=a.createOscillator(),g2=a.createGain();o2.connect(g2);g2.connect(a.destination);o2.frequency.value=f;g2.gain.setValueAtTime(0.15,t+i*0.12);g2.gain.exponentialRampToValueAtTime(0.001,t+i*0.12+0.2);o2.start(t+i*0.12);o2.stop(t+i*0.12+0.25);});}
+  }catch(e){}
+}
+
+function toggleSound(){soundOn=!soundOn;const b=document.getElementById("sound-btn");b.textContent=soundOn?"🔊":"🔇";b.classList.toggle("active",soundOn);}
+document.addEventListener("DOMContentLoaded",function(){var b=document.getElementById("sound-btn");if(b&&!soundOn){b.textContent="🔇";b.classList.remove("active");}});
+function toggleTimer(){timerMode=!timerMode;document.getElementById("timer-btn").classList.toggle("active",timerMode);const show=timerMode&&mode!=="sentence";document.getElementById("timer-wrap").classList.toggle("visible",show);document.getElementById("timer-num").classList.toggle("visible",show);startGame();}
+function setMode(m,el){mode=m;document.querySelectorAll(".mode-btn").forEach(b=>b.classList.remove("active"));el.classList.add("active");const show=timerMode&&mode!=="sentence";document.getElementById("timer-wrap").classList.toggle("visible",show);document.getElementById("timer-num").classList.toggle("visible",show);startGame();}
+function shuffle(arr){return[...arr].sort(()=>Math.random()-0.5);}
+function startGame(){score=0;streak=0;current=0;answered=false;stopTimer();questions=mode==="sentence"?shuffle(sentences):shuffle(vocab).slice(0,TOTAL);document.getElementById("results").style.display="none";updateScoreBar();loadQuestion();}
+function updateScoreBar(){const total=mode==="sentence"?SB_TOTAL:TOTAL;document.getElementById("score-val").textContent=score;document.getElementById("streak-val").textContent="🔥 "+streak;document.getElementById("q-val").textContent=(current+1)+"/"+total;document.getElementById("progress-bar").style.width=(current/total*100)+"%";}
+function loadQuestion(){answered=false;document.getElementById("quiz-card").style.display="none";document.getElementById("sb-card").style.display="none";if(mode==="sentence")loadSentenceQ();else loadQuizQ();updateScoreBar();}
+
+function loadQuizQ(){
+  const q=questions[current];
+  const area=document.getElementById("q-main-area");
+  const grid=document.getElementById("options-grid");
+  document.getElementById("feedback").textContent="";
+  document.getElementById("feedback").className="feedback";
+  document.getElementById("quiz-next").className="next-btn";
+  grid.innerHTML="";
+
+  if(mode==="zh_es"){
+    document.getElementById("q-label").textContent="Elige la traducción al español · 选择西班牙文翻译";
+    area.innerHTML=`<div class="main-word">${pyHz(q.hanzi,q.pinyin,'1rem','3rem')}</div>`;
+    const correct=q.es;
+    shuffle([correct,...shuffle(vocab.filter(v=>v!==q).map(v=>v.es)).slice(0,3)]).forEach(opt=>{
+      const b=document.createElement("button");b.className="opt-btn";
+      b.innerHTML=`<span class="opt-es-text">${opt}</span>`;b.dataset.val=opt;
+      b.onclick=()=>checkAnswer(b,correct,q);grid.appendChild(b);
+    });
+  }
+  else if(mode==="es_zh"){
+    document.getElementById("q-label").textContent="Elige el carácter chino correcto · 选择正确的汉字";
+    area.innerHTML=`<div class="es-big">${q.es}</div>`;
+    const correct=q.hanzi;
+    shuffle([correct,...shuffle(vocab.filter(v=>v!==q).map(v=>v.hanzi)).slice(0,3)]).forEach(opt=>{
+      const v=vocab.find(x=>x.hanzi===opt)||{pinyin:""};
+      const b=document.createElement("button");b.className="opt-btn";
+      b.innerHTML=`<div class="opt-pyhz-wrap">${pyHz(opt,v.pinyin,'0.68rem','1.5rem')}</div>`;
+      b.dataset.val=opt;b.onclick=()=>checkAnswer(b,correct,q);grid.appendChild(b);
+    });
+  }
+  else if(mode==="pinyin_es"){
+    document.getElementById("q-label").textContent="Elige la traducción al español · 根据汉字选择";
+    area.innerHTML=`<div class="py-main"><div class="py-main-hz" style="font-size:3rem;">${q.hanzi}</div></div>`;
+    const correct=q.es;
+    shuffle([correct,...shuffle(vocab.filter(v=>v!==q).map(v=>v.es)).slice(0,3)]).forEach(opt=>{
+      const b=document.createElement("button");b.className="opt-btn";
+      b.innerHTML=`<span class="opt-es-text">${opt}</span>`;b.dataset.val=opt;
+      b.onclick=()=>checkAnswer(b,correct,q);grid.appendChild(b);
+    });
+  }
+
+  const card=document.getElementById("quiz-card");card.style.display="block";card.style.animation="none";card.offsetHeight;card.style.animation="";
+  if(timerMode)startTimer();
+}
+
+function checkAnswer(btn,correct,q){
+  if(answered)return;answered=true;stopTimer();
+  const chosen=btn.dataset.val;
+  document.querySelectorAll(".opt-btn").forEach(b=>{b.disabled=true;if(b.dataset.val===correct)b.classList.add("correct");});
+  const fb=document.getElementById("feedback");
+  if(chosen===correct){
+    btn.classList.add("correct");const bonus=timerMode?Math.ceil(timeLeft/TIME_MAX*5):0;score+=10+streak*2+bonus;streak++;
+    if(streak>=3){playTone("streak");spawnParticles(btn,["🔥","⭐","💥"]);}else{playTone("correct");spawnParticles(btn,["✨","⭐","🎉"]);}
+    fb.textContent=streak>2?"🔥 Racha x"+streak+"！"+(bonus?"+"+bonus+" pts":"")+" ¡Excelente!":"✓ ¡Correcto!";fb.className="feedback correct";
+  }else{
+    btn.classList.add("wrong");playTone("wrong");streak=0;
+    fb.innerHTML="✗ Respuesta: <strong>"+correct+"</strong>";fb.className="feedback wrong";
+    document.getElementById("quiz-card").classList.add("shake");setTimeout(()=>document.getElementById("quiz-card").classList.remove("shake"),400);
+    addToNotebook(q);
+  }
+  document.getElementById("score-val").textContent=score;document.getElementById("streak-val").textContent="🔥 "+streak;
+  document.getElementById("quiz-next").className="next-btn show";
+}
+
+function loadSentenceQ(){
+  sbSentence=questions[current];sbPlaced=[];sbBank=shuffle([...sbSentence.words]);sbChecked=false;
+  document.getElementById("sb-prompt").innerHTML="<strong>"+sbSentence.es+"</strong>"+(sbSentence.note?"<br><small style='color:#5a9a80;font-size:0.75rem'>词汇："+sbSentence.note+"</small>":"");
+  document.getElementById("sb-feedback").textContent="";document.getElementById("sb-feedback").className="feedback";
+  document.getElementById("sb-next").className="next-btn";document.getElementById("sb-check-btn").disabled=false;
+  renderDropZone();renderWordBank();
+  const card=document.getElementById("sb-card");card.style.display="block";card.style.animation="none";card.offsetHeight;card.style.animation="";
+}
+function renderDropZone(){const dz=document.getElementById("sb-drop");dz.innerHTML="";if(sbPlaced.length===0){dz.innerHTML="<span style='color:#9aba9a;font-size:0.82rem;'>Coloca las palabras aquí · 把词语放到这里</span>";return;}sbPlaced.forEach((w,i)=>{const c=document.createElement("span");c.className="chip placed";c.textContent=w;c.onclick=(e)=>{e.stopPropagation();returnChip(i);};dz.appendChild(c);});}
+function renderWordBank(){const bank=document.getElementById("sb-bank");bank.innerHTML="";sbBank.forEach((w,i)=>{const c=document.createElement("span");c.className="chip bank";c.textContent=w;c.onclick=()=>placeChip(i);bank.appendChild(c);});}
+function placeChip(i){if(sbChecked)return;playTone("click");sbPlaced.push(sbBank[i]);sbBank.splice(i,1);renderDropZone();renderWordBank();}
+function returnChip(i){if(sbChecked)return;playTone("click");sbBank.push(sbPlaced[i]);sbPlaced.splice(i,1);renderDropZone();renderWordBank();}
+function clearSentence(){if(sbChecked)return;sbBank=shuffle([...sbSentence.words]);sbPlaced=[];renderDropZone();renderWordBank();}
+function checkSentence(){
+  if(sbChecked)return;
+  if(sbPlaced.length===0){document.getElementById("sb-feedback").textContent="¡Coloca las palabras primero!";document.getElementById("sb-feedback").className="feedback wrong";return;}
+  sbChecked=true;document.getElementById("sb-check-btn").disabled=true;
+  const correct=sbSentence.words;
+  const isOK=sbPlaced.length===correct.length&&sbPlaced.every((w,i)=>w===correct[i]);
+  document.getElementById("sb-drop").querySelectorAll(".chip").forEach((chip,i)=>{chip.onclick=null;chip.classList.add(i<correct.length&&chip.textContent===correct[i]?"correct-chip":"wrong-chip");});
+  const fb=document.getElementById("sb-feedback");
+  if(isOK){
+    score+=15+streak*2;streak++;
+    if(streak>=3){playTone("streak");spawnParticles(document.getElementById("sb-drop"),["🔥","⭐","💥"]);}else{playTone("correct");spawnParticles(document.getElementById("sb-drop"),["✨","📝","🎉"]);}
+    fb.innerHTML=(streak>2?"🔥 Racha x"+streak+"！¡Increíble!":"✓ ¡Muy bien!")+(sbSentence.pinyin?"<br><small style='opacity:0.8;'>"+sbSentence.pinyin+"</small>":"");
+    fb.className="feedback correct";
+  }else{
+    playTone("wrong");streak=0;
+    fb.innerHTML="✗ Orden correcto: <small style='color:#e07070;'>"+sbSentence.pinyin+"</small><br><strong>"+correct.join(" ")+"</strong>";
+    fb.className="feedback wrong";
+    document.getElementById("sb-card").classList.add("shake");setTimeout(()=>document.getElementById("sb-card").classList.remove("shake"),400);
+    addToNotebook({hanzi:sbSentence.words.join(""),pinyin:"句子",es:sbSentence.es});
+  }
+  document.getElementById("score-val").textContent=score;document.getElementById("streak-val").textContent="🔥 "+streak;
+  document.getElementById("sb-next").className="next-btn show";
+}
+
+function nextQuestion(){const total=mode==="sentence"?SB_TOTAL:TOTAL;current++;if(current>=total)showResults();else loadQuestion();}
+function showResults(){
+  playTone("finish");stopTimer();
+  document.getElementById("quiz-card").style.display="none";document.getElementById("sb-card").style.display="none";
+  document.getElementById("results").style.display="block";document.getElementById("final-score").textContent=score;
+  document.getElementById("progress-bar").style.width="100%";
+  const pct=score/((mode==="sentence"?SB_TOTAL*17:TOTAL*12));
+  let grade,color;
+  if(pct>=0.88){grade="🏆 优秀 ¡Excelente!";color="#2a5c35";}else if(pct>=0.65){grade="🌟 良好 ¡Muy bien!";color="#2a7a60";}else if(pct>=0.45){grade="👍 合格 ¡Bien!";color="#4a9a80";}else{grade="📚 加油 ¡Sigue practicando!";color="#c05050";}
+  const el=document.getElementById("final-grade");el.textContent=grade;el.style.color=color;
+}
+function startTimer(){timeLeft=TIME_MAX;updateTimerUI();timerIv=setInterval(()=>{timeLeft-=0.1;updateTimerUI();if(timeLeft<=0){clearInterval(timerIv);onTimeout();}},100);}
+function stopTimer(){clearInterval(timerIv);timerIv=null;}
+function updateTimerUI(){const pct=timeLeft/TIME_MAX,bar=document.getElementById("timer-bar"),num=document.getElementById("timer-num");bar.style.width=(pct*100)+"%";num.textContent=Math.ceil(timeLeft)+"s";const cls=pct>0.5?"":pct>0.25?"warning":"danger";bar.className="timer-bar"+(cls?" "+cls:"");num.className="timer-num visible"+(cls?" "+cls:"");}
+function onTimeout(){if(answered)return;answered=true;playTone("timeout");streak=0;document.getElementById("streak-val").textContent="🔥 0";document.querySelectorAll(".opt-btn").forEach(b=>b.disabled=true);const q=questions[current];document.getElementById("feedback").innerHTML="⏰ Tiempo: <strong>"+q.es+"</strong>";document.getElementById("feedback").className="feedback wrong";document.getElementById("quiz-next").className="next-btn show";addToNotebook(q);}
+function addToNotebook(q){if(!wrongItems.some(w=>w.hanzi===q.hanzi)){wrongItems.push(q);sessionStorage.setItem("wItems_gcc_hsk3_11",JSON.stringify(wrongItems));}}
+function openNotebook(){const body=document.getElementById("nb-body");if(wrongItems.length===0){body.innerHTML="<div class='notebook-empty'>🎉 ¡Sin errores! 没有错题</div>";}else{body.innerHTML=wrongItems.map(w=>`<div class='notebook-item'><div><div class='nb-hz'>${w.hanzi}</div><div class='nb-py'>${w.pinyin||""}</div></div><div><div style='font-size:0.65rem;color:#9abab0;'>Español</div><div class='nb-es'>${w.es}</div></div></div>`).join("");}document.getElementById("nb-count").textContent=wrongItems.length+" errores";document.getElementById("modal-overlay").classList.add("open");}
+function closeNotebook(){document.getElementById("modal-overlay").classList.remove("open");}
+function modalOutsideClick(e){if(e.target===document.getElementById("modal-overlay"))closeNotebook();}
+function clearNotebook(){wrongItems=[];sessionStorage.removeItem("wItems_gcc_hsk3_11");openNotebook();}
+function spawnParticles(el,emojis){const rect=el.getBoundingClientRect();for(let i=0;i<6;i++){const p=document.createElement("div");p.className="particle";p.textContent=emojis[Math.floor(Math.random()*emojis.length)];p.style.left=(rect.left+rect.width/2+(Math.random()-0.5)*80)+"px";p.style.top=(rect.top+rect.height/2)+"px";p.style.animationDelay=(i*0.07)+"s";document.body.appendChild(p);setTimeout(()=>p.remove(),1400);}}
+startGame();
+</script>
+<script src="../common.js"></script>
+</body>
+</html>
