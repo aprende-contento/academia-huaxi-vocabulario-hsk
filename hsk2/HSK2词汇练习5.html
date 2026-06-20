@@ -341,7 +341,7 @@ function pyHz(hanzi, pinyin, pySize, hzSize) {
 }
 
 let mode="zh_es", questions=[], current=0, score=0, streak=0, answered=false;
-let soundOn=true, timerMode=false, timerIv=null, timeLeft=15;
+let soundOn=window.innerWidth>767, timerMode=false, timerIv=null, timeLeft=15;
 const TOTAL=25, SB_TOTAL=sentences.length, TIME_MAX=15;
 let sbSentence=null, sbPlaced=[], sbBank=[], sbChecked=false;
 let wrongItems=JSON.parse(sessionStorage.getItem("wItems_hsk2_5")||"[]");
@@ -362,7 +362,7 @@ function playTone(type){
   }catch(e){}
 }
 
-function toggleSound(){soundOn=!soundOn;const b=document.getElementById("sound-btn");b.textContent=soundOn?"🔊":"🔇";b.classList.toggle("active",soundOn);}
+function toggleSound(){soundOn=!soundOn;const b=document.getElementById("sound-btn");b.textContent=soundOn?"🔊":"🔇";b.classList.toggle("active",soundOn);}(function(){var _b=document.getElementById("sound-btn");if(_b&&!soundOn){_b.textContent="🔇";_b.classList.remove("active");}})()
 function toggleTimer(){timerMode=!timerMode;document.getElementById("timer-btn").classList.toggle("active",timerMode);const show=timerMode&&mode!=="sentence";document.getElementById("timer-wrap").classList.toggle("visible",show);document.getElementById("timer-num").classList.toggle("visible",show);startGame();}
 function setMode(m,el){mode=m;document.querySelectorAll(".mode-btn").forEach(b=>b.classList.remove("active"));el.classList.add("active");const show=timerMode&&mode!=="sentence";document.getElementById("timer-wrap").classList.toggle("visible",show);document.getElementById("timer-num").classList.toggle("visible",show);startGame();}
 function shuffle(arr){return[...arr].sort(()=>Math.random()-0.5);}
