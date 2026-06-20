@@ -134,9 +134,19 @@ header::after{content:'';position:absolute;bottom:-3px;left:0;right:0;height:1px
 
 @keyframes pop{0%{transform:scale(0.96);opacity:0}100%{transform:scale(1);opacity:1}}
 
-  .volver-wrap { max-width:660px; margin:0 auto; padding:8px 16px 0; }
-  .volver-btn { display:inline-block; font-size:0.85rem; color:rgba(42,61,34,0.7); text-decoration:none; padding:4px 10px; border:1px solid rgba(42,61,34,0.2); border-radius:20px; background:rgba(255,255,255,0.5); }
+  .volver-btn { display:inline-block; font-size:0.85rem; color:rgba(42,61,34,0.7); text-decoration:none; padding:4px 10px; border:1px solid rgba(42,61,34,0.2); border-radius:20px; background:rgba(255,255,255,0.5); white-space:nowrap; flex-shrink:0; margin-right:8px; }
   .volver-btn:hover { background:rgba(255,255,255,0.8); color:#2a3d22; }
+@media (max-width:767px){
+  .header-logo img{height:18px;}
+  .header-title{font-size:1.1rem;letter-spacing:1px;}
+  .volver-text{display:none;}
+  .stats-bar{height:auto;flex-wrap:wrap;padding:8px 10px;gap:6px 0;border-radius:14px;justify-content:space-around;}
+  .stat-spacer{width:100%;height:0;flex:none;display:block;}
+  .stat-divider{display:none;}
+  .mode-bar{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:0.6rem;}
+  .mode-bar::-webkit-scrollbar{display:none;}
+  .mode-btn{white-space:nowrap;flex-shrink:0;}
+}
 </style>
 </head>
 <body>
@@ -166,10 +176,10 @@ header::after{content:'';position:absolute;bottom:-3px;left:0;right:0;height:1px
       <img src="../school-logo.jpg" alt="Chunchun Guo">
     </div>
   </header>
-  <div class="volver-wrap"><a href="GCC_HSK5_index.html" class="volver-btn">← <span class="volver-text">Volver</span></a></div>
-
   <!-- STATS BAR -->
   <div class="stats-bar">
+    <a href="GCC_HSK5_index.html" class="volver-btn">← <span class="volver-text">Volver</span></a>
+    <div class="stat-divider"></div>
     <div class="stat-item">
       <span class="stat-label">PUNTOS</span>
       <span class="stat-value gold" id="score">0</span>
